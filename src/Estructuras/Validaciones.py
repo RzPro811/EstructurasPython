@@ -111,6 +111,7 @@ def validarNoNegativo(numero: int, incluyeCero:bool = True, mensaje:str = None, 
 
 def validarOrden(numeroMenor:int, numeroMayor:int, mensaje:str = None, error:Exception = ValueError):
     """Dado dos numeros enteros, valida que el primer numero sea menor que el segundo
+    
     **parameters**:
         -   **numeroMenor** (int): menor que el siguiente
         -   **numeroMayor** (int): mayor que el anterior
@@ -129,6 +130,18 @@ def validarOrden(numeroMenor:int, numeroMayor:int, mensaje:str = None, error:Exc
         raise error(mensaje)
 
 def validarRango(valor:int, minimo:int, maximo:int, incluyeExtremos:bool = True, mensaje:str = None, error:Exception = IndexError):
+    """Dado dos numeros enteros, valida que el primer numero sea menor que el segundo
+    
+    **parameters**:
+        -   **valor** (int)
+        -   **minimo** (int): menor que el maximo
+        -   **maximo** (int): mayor que el minimo
+        -   **mensaje** (str): por defecto None
+        -   **error** (Exception): por defecto ValueError
+
+    **excepciones**:
+        -   **FalloValidacion**: si no se cumplen con las condiones previamente establecidas
+    """
     validarError(error)
     mensaje = crearMensaje(f"Ingrese un numero entre {minimo} y {maximo}", mensaje)
     validarTipoObjeto(int, valor , "Ingrese un numero entero por parametro", FalloValidacion)
@@ -161,7 +174,7 @@ class TypeStruct:
 
     #METODOS DE CLASE
     def validarEntrada(self, entrada:Generic[T]):
-        validarTipoObjeto(entrada, self.getType(), "Ingresa un tipo "+self.getName()) 
+        validarTipoObjeto(self.getType(), entrada, "Ingresa un tipo "+self.getName()) 
 
     def validarEntradas(self, *entradas:Generic[T]):
         for entrada in entradas:

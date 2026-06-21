@@ -65,7 +65,7 @@ def validarTipo(tipo:type, mensaje:str = None, error:Exception = TypeError):
     if not isinstance(tipo, type) and not isinstance(tipo, Enum):
         raise error(mensaje)
 
-def validarTipoObjeto(tipo:type, objeto:Generic[T], mensaje:str = None, error:Exception = TypeError):
+def validarTipoObjeto(tipo:type, objeto:T, mensaje:str = None, error:Exception = TypeError):
     """Valida que un objeto sea de un tipo ingresado
     
     **parameters**:
@@ -157,6 +157,25 @@ def validarRango(valor:int, minimo:int, maximo:int, incluyeExtremos:bool = True,
         if (valor <= minimo) or (valor >= maximo):
             raise error(mensaje)
 
+def validarCondicion(condicion:bool, mensaje:str, error:Exception):
+    """Dada una condicion, si es verdadera, lanza error
+    
+    **parameters**
+        -   **condicion** (bool): si es verdadero, lanza error
+        -   **mensaje** (str)
+        -   **error** (Exception)
+
+    **excepciones**:
+        -   **FalloValidacion**: si no se cumplen con las condiones previamente establecidas
+    """
+    validarError(error)
+    mensaje = crearMensaje(f"se ha hallado una condicion incompatible", mensaje)
+    validarTipoObjeto(bool, condicion, "Ingresa una condicion booleana", FalloValidacion)
+
+    if condicion:
+        raise error(mensaje)
+
+
 #HEREDABLE PARA ESTRUCTURA DE UN SOLO DATO ------------------------------------------------------------------
 
 class TypeStruct:
@@ -170,24 +189,74 @@ class TypeStruct:
 
     #CONSTRUCTOR
     def __init__(self, tipo:type):
-        self.setType(tipo)
+        """Dado un tipo de objeto, setea el tipo de dato que la estructura va a recibir
+        
+        **parameters**
+            -   **tipo** (type)
+
+        **excepciones**
+            -   **TypeError**: si el tipo ingresado no es un type
+        """
+        self.__setType(tipo)
 
     #METODOS DE CLASE
-    def validarEntrada(self, entrada:Generic[T]):
-        validarTipoObjeto(self.getType(), entrada, "Ingresa un tipo "+self.getName()) 
+    def __validarEntrada__(self, entrada:T, permitirNone = False):
+        """Dado una entrada, valida que sea del tipo ingresado, sino no lo es, lanza TypeError
+        
+        **parameters**
+            -   **entrada** (tipo ingresado)
+            -   **permitiNone** (bool): por defecto False. Si es verdadero, no saltará error si la entrada es None.
+        
+        **excepciones**
+            -   **FalloValidacion**: si el parametro permitirNone no es una condicion bool
+            -   **TypeError**: si la entrada no es del tipo ingresado. Si la condicion permitirNone es false, tambien saltará eror si la entrada es None
+        """
+        validarTipoObjeto(bool, permitirNone,"La condicion de permitir None debe ser booleana", FalloValidacion)
+        if (entrada is not None) or ( not permitirNone):
+            validarTipoObjeto(self.getType(), entrada, "Ingresa un tipo "+self.getTypeName()) 
 
-    def validarEntradas(self, *entradas:Generic[T]):
+    def __validarEntradas__(self, *entradas:T, permitirNone = False):
+        """Dado varias entradas, valida que cada una sea del tipo ingresado, sino no lo es, lanza TypeError
+        
+        **parameters**
+            -   **entradas** (tuple[tipo ingresado])
+            -   **permitiNone** (bool): por defecto False. Si es verdadero, no saltará error si alguna entrada es None.
+        
+        **excepciones**
+            -   **FalloValidacion**: si el parametro permitirNone no es una condicion bool
+            -   **TypeError**: si la entrada no es del tipo ingresado. Si la condicion permitirNone es false, tambien saltará eror si la entrada es None
+        """
+        validarTipoObjeto(bool, permitirNone,"La condicion de permitir None debe ser booleana", FalloValidacion)
         for entrada in entradas:
-            validarTipoObjeto(entrada, self.getType(), "Una de las entradas ingresadas no es del tipo "+self.getName())
+            if (entrada is not None) or ( not permitirNone):
+                validarTipoObjeto(entrada, self.getType(), "Una de las entradas ingresadas no es del tipo "+self.getTypeName())
 
     #GETTERS
     def getType(self) -> type:
+        """Retorna el tipo de variable almacenable
+        
+        **return**
+            -   **type** tipo de variable
+        """
         return self.__tipo
     
-    def getName(self) -> str:
+    def getTypeName(self) -> str:
+        """Retorna el nombre del tipo de variable almacenable
+        
+        -   **return**
+            -   **str** nombre del tipo de variable
+        """
         return self.getType().__name__
 
     #SETTERS
-    def setType(self, tipo:type):
+    def __setType(self, tipo:type):
+        """Setea el tipo de variable que se va a filtrar
+        
+        -   **parameters**
+            -   **tipo** (type)
+
+        -   **excepciones**
+            -   **TypeError**: si el tipo no es un type
+        """
         validarTipo(tipo)
         self.__tipo = tipo

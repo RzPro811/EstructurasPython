@@ -1,0 +1,11 @@
+pyproject.toml
+src/Estructuras/Grafo.py
+src/Estructuras/Ordenador.py
+src/Estructuras/Validaciones.py
+src/Estructuras/Vector.py
+src/Estructuras/__init__.py
+src/Estructuras.egg-info/PKG-INFO
+src/Estructuras.egg-info/SOURCES.txt
+src/Estructuras.egg-info/dependency_links.txt
+src/Estructuras.egg-info/top_level.txt
+src/Estructuras/Excepciones/Generales.py

@@ -3,10 +3,9 @@ from .Excepciones.Generales import *
 from typing import Generator
 from random import shuffle
 
-class Vector(Generic[T], TypeStruct):
-    #CONSTANTES
-    __PRIMERA_POSCICION = 0
+PRIMERA_POSCICION = 0
 
+class Vector(Generic[T], TypeStruct):
     #ATRIBUTOS
     __longitudOriginal: int
     __array: list[T]
@@ -60,7 +59,7 @@ class Vector(Generic[T], TypeStruct):
             -   **bool** Verdadero si todos los elementos en el vector son null, falso si al menos uno no lo es
         """
         vacio = True
-        i = self.__PRIMERA_POSCICION
+        i = PRIMERA_POSCICION
 
         while vacio and (i <= self.__getPoscicionFinal()):
             vacio = self[i] is None
@@ -77,7 +76,7 @@ class Vector(Generic[T], TypeStruct):
         lleno = True
         i = self.__getPoscicionFinal()
 
-        while lleno and i >= self.__PRIMERA_POSCICION:
+        while lleno and i >= PRIMERA_POSCICION:
             lleno = self[i] is not None
             i-=1
         
@@ -91,7 +90,7 @@ class Vector(Generic[T], TypeStruct):
         """
         return self.__expansible
     
-    def agregar(self, elemnto:T):
+    def agregar(self, elemento:T):
         """Agrega un nuevo elemento al vector en la primera posicion que sea None
         
         **parameters**
@@ -101,9 +100,9 @@ class Vector(Generic[T], TypeStruct):
             -   **TypeError** si el elemento no es del tipo ingresado o si es None
             -   **LlenoError** si el vector está lleno y no se puede expandir
         """
-        self.__validarEntrada__(elemnto)
+        self.__validarEntrada__(elemento)
         agregado = False
-        i = self.__PRIMERA_POSCICION
+        i = PRIMERA_POSCICION
 
         if self.estaLleno():
             self.__validarExpansible()
@@ -111,7 +110,7 @@ class Vector(Generic[T], TypeStruct):
 
         while not agregado and (i <= self.__getPoscicionFinal()):
             if self[i] is None:
-                self[i] = elemnto
+                self[i] = elemento
                 agregado = True
             else: i+=1
 
@@ -228,8 +227,8 @@ class Vector(Generic[T], TypeStruct):
     #VALIDACIONES
     def __validarIndice(self, indice:int):
         """Valida que el indice se encuentre el rango del vector"""
-        validarRango(indice, Vector.__PRIMERA_POSCICION,self.__getPoscicionFinal(),
-                     mensaje= f"Ingresa un valor entre {Vector.__PRIMERA_POSCICION} y {self.__getPoscicionFinal()}")
+        validarRango(indice, PRIMERA_POSCICION,self.__getPoscicionFinal(),
+                     mensaje= f"Ingresa un valor entre {PRIMERA_POSCICION} y {self.__getPoscicionFinal()}")
 
     def __validarExpansible(self):
         """Valida que el vector se pueda expandir"""
@@ -271,17 +270,260 @@ class Vector(Generic[T], TypeStruct):
         
 
 #MATRIZ-----------------------------------------------------------------------------------------------------------------------------------------
-#LISTA------------------------------------------------------------------------------------------------------------------------------------------
-
-class Lista(Generic[T], TypeStruct):
+class Matriz(Generic[T], TypeStruct):
     #ATRIBUTOS
-    __lista:list[Generator[T]]
+    __array:Vector[Vector[T]]
+    
+    #CONSTRUCTORES
+    def __init__(self, tipo, longitudColu:int, longitudFila:int):
+        validarNoNegativo(longitudFila, False, "Ingrese una longitud Positiva", LongitudNegativaError)
+        validarNoNegativo(longitudColu, False, "Ingrese una longitud Positiva", LongitudNegativaError)
 
-    #CONSTRUCTOR
-    def __init__(self, tipo):
+        self.__array = Vector(Vector,longitudColu)
+
+        for i in range(longitudColu):
+            self.__array[i] = Vector(tipo, longitudFila)
+
         super().__init__(tipo)
-        self.__lista = []
+
+    #METODOS GENERALES
+    def __str__(self) -> int:
+        cadena = "\n"
+
+        for fila in self.__array:
+            cadena += str(fila) + "\n"
+
+        return cadena
+    def __len__(self):
+        return self.getLongitudFila() * self.getLongitudColu()
+    def __iter__(self) -> Generator[T]:
+        for fila in self.__array:
+            for item in fila:
+                yield item
+
+    #METODOS DE CLASE
+    def estaLleno(self) -> bool:
+        lleno = True
+
+        i =self.__getUltimaPosColu()
+
+        while lleno and (i >= PRIMERA_POSCICION):
+            j = self.__getUltimaPosFila()
+
+            while lleno and (j >= PRIMERA_POSCICION):
+                lleno = self.getItem(i,j) is not None
+                j-=1
+
+            i-=1
+
+        return lleno
+
+    def estaVacio(self) -> bool:
+        vacio = True
+
+        i = PRIMERA_POSCICION
+        
+        while vacio and (i<=self.__getUltimaPosColu()):
+            j = PRIMERA_POSCICION
+
+            while vacio and (j<= self.__getUltimaPosFila()):
+                vacio = self.getItem(i,j) is None
+                j+=1
+            i+=1
+
+        return vacio
+
+
+    def esCuadrada(self):
+        return self.getLongitudFila() == self.getLongitudColu()
+    
+    def esSimetrica(self):
+        simetrica = self.esCuadrada()
+        i = PRIMERA_POSCICION
+
+        while simetrica and (i <= self.__getUltimaPosColu()):
+            j = i+1
+            while simetrica and (j <= self.__getUltimaPosFila):
+                simetrica = self.getItem(i,j) == self.getItem(j,i)
+                j+=1
+            i+=1
+
+        return simetrica
+
+    def agregar(self, elemento:T):
+        self.__validarEntrada__(elemento)
+        agregado = False
+        i = PRIMERA_POSCICION
+
+        while (i <= self.__getUltimaPosColu()) and not agregado:
+            j = PRIMERA_POSCICION
+            
+            while (j <= self.__getUltimaPosFila()) and not agregado:
+                
+                if self.getItem(i,j) is None:
+                    self.setItem(i,j,elemento)
+                    agregado = True
+                
+                j+=1
+            
+            i+=1
+
+    def copiar(self) -> Matriz[T]:
+        matriz = Matriz(self.getType(),self.getLongitudColu(), self.getLongitudFila())
+        
+        for item in self:
+            matriz.agregar(item)
+
+        return matriz
+
+    #VALIDACIONES
+    def __validarIndiceFila(self, indice:int):
+        validarRango(indice,PRIMERA_POSCICION,self.__getUltimaPosFila(),
+                     mensaje= f"Ingresa un poscicion entre {PRIMERA_POSCICION} y {self.__getUltimaPosFila()}")
+
+    def __validarIndiceColu(self, indice:int):
+        validarRango(indice,PRIMERA_POSCICION,self.__getUltimaPosColu(),
+                     mensaje= f"Ingresa un poscicion entre {PRIMERA_POSCICION} y {self.__getUltimaPosColu()}")
+        
+    def __validarIndices(self, indice:int, jndice:int):
+        self.__validarIndiceColu(indice)
+        self.__validarIndiceFila(jndice)
+
+    #GETTERS
+    def getCantidadElementos(self) -> int:
+        elementos = 0
+
+        for item in self:
+            if item is not None:
+                elementos+=1
+
+        return elementos
+
+    def getLongitudFila(self) -> int :
+        return len(self.__array[PRIMERA_POSCICION])
+    def getLongitudColu(self) -> int :
+        return len(self.__array)
+
+    def getItem(self, indice:int, jndice:int) -> T:
+        self.__validarIndices(indice, jndice)
+        return self.__array[indice][jndice]
+
+    def __getUltimaPosFila(self) -> int :
+        return self.getLongitudFila() -1
+    def __getUltimaPosColu(self) -> int :
+        return self.getLongitudColu() -1
+
+    #SETTERS
+    def setItem(self, indice:int, jndice:int, elemento:T):
+        self.__validarIndices(indice,jndice)
+        self.__validarEntrada__(elemento, True)
+        self.__array[indice][jndice] = elemento
 
 #COLA-------------------------------------------------------------------------------------------------------------------------------------------
+class Cola(Generic[T], TypeStruct):
+    #CONSTANTES
+    __PRIMER_DATO = 0
+    #ATRIBUTOS
+    __cola:list[T]
+
+    #CONSTRUCTOR
+    def __init__(self, tipo:type):
+        """Dado un tipo de elemento, crea una cola que almacena ese tipo de datos
+        
+        **parameters**
+        -   **tipo** (type)
+
+        **excepciones**
+            -   **TypeError**: si el tipo ingresado no es type
+        """
+        super().__init__(tipo)
+        self.__cola = []
+
+    #METODOS GENERALES
+    def __str__(self):
+        return "[COLA] proximo elemento a salir: " +str(self.__cola[self.__PRIMER_DATO])
+
+    def __len__(self):
+        return len(self.__cola)
+
+    #METODOS DE CLASE
+    def estaVacia(self):
+        return len(self) != 0
+
+    def agregar(self, elemento:T):
+        self.__validarEntrada__(elemento)
+        self.__cola.append(elemento)
+
+    def quitar(self) -> T:
+        self.__validarColaVacia()
+        return self.__cola.pop(self.__PRIMER_DATO)
+    
+    #VALIDACIONES
+    def __validarColaVacia(self):
+        validarCondicion(self.estaVacia(), "La cola está vacía", VacioError)
+
+    #GETTERS
+    def getLongitud(self):
+        return len(self)
+
+
 #PILA-------------------------------------------------------------------------------------------------------------------------------------------
+
+class Pila(Generic[T], TypeStruct):
+    #ATRIBUTOS
+    __pila:list[T]
+
+    #CONSTRUCTOR
+    def __init__(self, tipo:type):
+        """Dado un tipo de elemento, crea una pila que almacena ese tipo de datos
+        
+        **parameters**
+        -   **tipo** (type)
+
+        **excepciones**
+            -   **TypeError**: si el tipo ingresado no es type
+        """
+        super().__init__(tipo)
+        self.__pila = []
+
+    #METODOS GENERALES
+    def __str__(self):
+        return "[PILA] proximo elemento a salir: " +str(self.__pila[self.getLongitud()-1])
+
+    def __len__(self):
+        return len(self.__pila)
+
+    #METODOS DE CLASE
+    def estaVacia(self):
+        return len(self) != 0
+
+    def agregar(self, elemento:T):
+        self.__validarEntrada__(elemento)
+        self.__pila.append(elemento)
+
+    def quitar(self) -> T:
+        self.__validarColaVacia()
+        return self.__pila.pop()
+    
+    #VALIDACIONES
+    def __validarColaVacia(self):
+        validarCondicion(self.estaVacia(), "La cola está vacía", VacioError)
+
+    #GETTERS
+    def getLongitud(self):
+        return len(self)
+
 #HEAP-------------------------------------------------------------------------------------------------------------------------------------------
+class Heap(Generic[T], TypeStruct):
+    #CONSTANTES
+    __PRIMERA_POSCICION = 0
+    #ATRIBUTOS
+    __heap:Vector[T]
+    __niveles:int
+    #CONSTRUCTOR
+    #METODOS GENERALES
+    #METODOS DE CLASE
+    #METODOS INTERNOS
+    #VALIDACIONES
+    #METODOS ESTATICOS
+    #GETTERS

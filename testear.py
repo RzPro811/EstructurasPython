@@ -1,13 +1,6 @@
-from src.Estructuras.Vector import Vector
-from src.Estructuras.Validaciones import validarTipoObjeto
+from src.Estructuras.Grafo import Vertice, Arista
+from src.Estructuras.Vector import validarTipoObjeto
 
-vector:Vector[int] = Vector(int, 10, True)
+Vertice(str, "string")
 
-for i in range(20):
-    vector.agregar(i)
-
-for i in range(20):
-    numero = vector.quitar()
-    print(numero)
-
-print(vector)
+Arista(None)

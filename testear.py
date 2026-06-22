@@ -1,6 +1,16 @@
-from src.Estructuras.Grafo import Vertice, Arista
-from src.Estructuras.Vector import validarTipoObjeto
+from src.Estructuras.Vector import Heap, Vector
+from random import randint
 
-Vertice(str, "string")
+heap  = Heap(int)
 
-Arista(None)
+for i in range(10):
+    numero = randint(0,100)
+    print(numero)
+    heap.agregar(numero)
+
+vector = Vector(int, heap.getCantidadElementos())
+
+while not heap.estaVacio():
+    vector.agregar(heap.quitar())
+
+print(vector)

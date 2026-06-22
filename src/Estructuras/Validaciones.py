@@ -212,7 +212,7 @@ class TypeStruct:
             -   **TypeError**: si la entrada no es del tipo ingresado. Si la condicion permitirNone es false, tambien saltará eror si la entrada es None
         """
         validarTipoObjeto(bool, permitirNone,"La condicion de permitir None debe ser booleana", FalloValidacion)
-        if (entrada is not None) or ( not permitirNone):
+        if (entrada is not None) or (not permitirNone) or (self.getType() is None):
             validarTipoObjeto(self.getType(), entrada, "Ingresa un tipo "+self.getTypeName()) 
 
     def __validarEntradas__(self, *entradas:T, permitirNone = False):
@@ -228,7 +228,7 @@ class TypeStruct:
         """
         validarTipoObjeto(bool, permitirNone,"La condicion de permitir None debe ser booleana", FalloValidacion)
         for entrada in entradas:
-            if (entrada is not None) or ( not permitirNone):
+            if (entrada is not None) or (not permitirNone) and (self.getType() is None):
                 validarTipoObjeto(entrada, self.getType(), "Una de las entradas ingresadas no es del tipo "+self.getTypeName())
 
     #GETTERS
@@ -246,6 +246,7 @@ class TypeStruct:
         -   **return**
             -   **str** nombre del tipo de variable
         """
+        if self.getType() is None: return str(None)
         return self.getType().__name__
 
     #SETTERS
@@ -258,5 +259,23 @@ class TypeStruct:
         -   **excepciones**
             -   **TypeError**: si el tipo no es un type
         """
-        validarTipo(tipo)
+        if (tipo is not None):validarTipo(tipo)
         self.__tipo = tipo
+
+class DataStruct(TypeStruct,Generic[T]):
+    #ATRIBUTOS
+    __dato:T
+
+    #CONSTRUCTOR
+    def __init__(self, tipo:type, dato:T, permitirNone:bool = False):
+        super().__init__(tipo)
+        self.setDato(dato,permitirNone)
+
+    #GETTERS
+    def getDato(self) -> T:
+        return self.__dato
+    
+    #SETTERS
+    def setDato(self, dato:T, permitirNone:bool = False):
+        self.__validarEntrada__(dato, permitirNone)
+        self.__dato = dato

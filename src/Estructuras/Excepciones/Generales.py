@@ -12,3 +12,8 @@ class LlenoError(RuntimeError):
     def __init__(self, *args):
         """Usar si tu estructura se llenó"""
         super().__init__(*args)
+
+class MetodoInvalidoError(RuntimeError):
+    def __init__(self, *args):
+        """Usar cuando un metodo es invalido"""
+        super().__init__(*args)

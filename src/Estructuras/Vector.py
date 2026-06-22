@@ -515,13 +515,75 @@ class Pila(Generic[T], TypeStruct):
 class Heap(Generic[T], TypeStruct):
     #ATRIBUTOS
     __monton:Vector[T]
+    __metodo:function
+
     #CONSTRUCTOR
+    def __init__(self, tipo, metodo = None):
+        super().__init__(tipo)
+        self.__setMetodo(metodo)
+        self.__monton = Vector(self.getType(),1)
+
     #METODOS GENERALES
+
     #METODOS DE CLASE
+    
     #METODOS INTERNOS
+    def __generarMonton(self, longitud):
+        return Vector(self.getType(),longitud)
+    
     #VALIDACIONES
+    def __validarMetodo(self, metodo):
+        validarCondicion((metodo is None) or (callable(metodo)), "Ingresa un metodo valido", MetodoInvalidoError)
+
+    def __validarIndice(self, indice:int):
+        validarTipoObjeto(int, indice, "Ingresa un indice int")
+        validarRango(indice, PRIMERA_POSCICION, self.__getLongitud(), 
+                     mensaje= f"Ingrese un indice entre {PRIMERA_POSCICION} y {self.__getLongitud()}") 
+
     #METODOS ESTATICOS
+    
     #GETTERS
+
     #Calculables
+    def __getLongitud(self) -> int:
+        return len(self.__monton)
+    
+    def __getPosFinal(self) -> int:
+        return self.__getLongitud() - 1
+    
+    def getNiveles(self) -> int:
+        nivel = 0
+        pow2 = 1
+        escalones = 0
+
+        while escalones < self.__getLongitud():
+            escalones + pow2
+            nivel+=1
+            pow2*=2
+
+        return nivel
+
     #Atributos
+    def __getItem(self, indice:int) -> T:
+        self.__validarIndice(indice)
+        return self.__monton[indice]
+
+    def __getMetodo(self, elemento:T) -> object:
+        self.__validarEntrada__(elemento)
+        return self.__metodo(elemento)
+
+    def __getRaiz(self) -> T:
+        return self.__getItem(PRIMERA_POSCICION)
+    
     #SETTERS
+    def __setItem(self, indice:int, entrada:T):
+        self.__validarIndice(indice)
+        self.__validarEntrada__(entrada)
+        self.__monton[indice] = entrada
+    
+    def __setMetodo(self, metodo):
+        self.__validarMetodo(metodo)
+
+    def __setRaiz(self, entrada:T):
+        self.__validarEntrada__(entrada)
+        self.__monton[PRIMERA_POSCICION] = entrada

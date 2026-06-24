@@ -56,7 +56,7 @@ class Vector(Generic[T], TypeStruct):
         """Verifica que el vector este vacío
         
         **return**
-            -   **bool** Verdadero si todos los elementos en el vector son null, falso si al menos uno no lo es
+            -   (bool) Verdadero si todos los elementos en el vector son null, falso si al menos uno no lo es
         """
         vacio = True
         i = PRIMERA_POSCICION
@@ -71,7 +71,7 @@ class Vector(Generic[T], TypeStruct):
         """Verifica que el vector este lleno
         
         **return**
-            -   **bool** Verdadero si ningun elemento del vector es null, falso si al menos uno lo es
+            -   (bool) Verdadero si ningun elemento del vector es null, falso si al menos uno lo es
         """
         lleno = True
         i = self.__getPoscicionFinal()
@@ -86,7 +86,7 @@ class Vector(Generic[T], TypeStruct):
         """Valida que el vector se pueda expandir al llenarse
         
         **return**
-            -  **bool** si el vector se expande al llenarse, falso si no
+            -  (bool) si el vector se expande al llenarse, falso si no
         """
         return self.__expansible
     
@@ -141,8 +141,7 @@ class Vector(Generic[T], TypeStruct):
 
 
     def remover(self, indice:int) -> T:
-        """Quita el elemento en la poscicion ingresada por parametro
-        
+        """Quita el elemento en la poscicion ingresada por **parameters**        
         **parameters**
             -   **indice** (int): entre 0 y la longitud del vector - 1 
 
@@ -204,7 +203,7 @@ class Vector(Generic[T], TypeStruct):
         """Verifica que el ultimo tramo de expansión del vector, este vacío
         
         **return**
-            -   **bool** Verdadero si el tramo final tiene unicamente elementos None, falso si al menos uno no lo es
+            -   (bool) Verdadero si el tramo final tiene unicamente elementos None, falso si al menos uno no lo es
         """
         vacio = True
         i = self.__getPoscicionFinal()
@@ -514,7 +513,9 @@ class Pila(Generic[T], TypeStruct):
         return len(self)
 
 #HEAP-------------------------------------------------------------------------------------------------------------------------------------------
-class Heap(Generic[T], TypeStruct):
+class Heap(Generic[T], TypeStruct):#CONSTANTES
+    POSCICION_RAIZ = 0
+
     #ATRIBUTOS
     __monton:list
     __metodoOrdenamiento = None
@@ -523,44 +524,52 @@ class Heap(Generic[T], TypeStruct):
     def __init__(self, tipo:type, metodo =None):
         """Crea el heap
         
-        PARAMETROS
-            -   tipo **type** tipo de los datos a almacenar
+        **parameters**
+            -   tipo (type) tipo de los datos a almacenar
         """
         if (not callable(metodo) and (metodo is not None)): raise TypeError("Se debe ingresar una funcion que retorna comparables")
-        
+
         super().__init__(tipo)
         self.__monton = self.__generarMonton(1)
         self.__metodoOrdenamiento = metodo
 
+    #METODOS GENERALES
+    def __repr__(self) -> str:
+        """No tengo ni idea que hace esta cosa pero sirve bien para ver el contenido del heap al debuguear"""
+        return str(self.__monton)
 
     #METODOS DE CLASE
-    def estaVacio(self) ->bool:
+    def estaVacio(self) -> bool:
         """Verifica que el heap este vacio
         
-        RETURN: True si todos los elementos son None, False si al menos uno no es None"""
+        **return**
+            -    (bool) Verdadero si todos los elementos son None, falso si al menos uno no es None"""
 
         i = 0
         vacio = True
 
-        while (vacio and (i<self.getCantidadElementos())):
+        while (vacio and (i < self.getCantidadElementos())):
             vacio = self.__monton[i] == None
             i += 1
+
+        return bool
 
     def estaCompleto(self) -> bool:
         """Verifica que el heap este completo
         
-        RETURN: Verdadero si todos los subarboles del heap estan completos, falso si al menos uno no lo esta"""
+        **return**
+            -   (bool) Verdadero si todos los subarboles del heap estan completos, falso si al menos uno no lo esta"""
 
-        return self.__subArbolCompleto(PRIMERA_POSCICION)
+        return self.__subArbolCompleto(self.POSCICION_RAIZ)
 
-    def agregar(self, elemento: T):
+    def agregar(self, elemento:T):
         """Agrega un nuevo elemento en la ultima poscicion del heap
 
-        PARAMETROS:
-            -   elemento **tipo ingresado**
+        **parameters**
+            -   elemento (T)
 
-        EXCEPCIONES:
-            - **TypeError**: si el tipo ingresado no es del **tipo ingresado** en el constructor 
+        **excepciones**
+            - **TypeError**: si el tipo ingresado no es del tipo ingresado en el constructor 
         """
         
         self.__validarEntrada__(elemento)
@@ -572,18 +581,18 @@ class Heap(Generic[T], TypeStruct):
     def quitar(self) -> T:
         """Quita el elemento de la raiz del heap
         
-        RETURN:
-            **Tipo Ingresado** elemento de la raiz
+        **return**
+            -   (T) elemento de la raiz
 
-        EXCEPCIONES:
+        **excepciones**
             -   **ErrorRegistroVacio** si el heap esta vacio
         """
-        if self.estaVacio(): raise RuntimeError("El heap esta vacio")
+        validarCondicion(self.estaVacio(), "El Heap esta vacio", VacioError)
 
         elemento = self.__getRaiz()
         self.__setRaiz(self.__getItem(self.getCantidadElementos()-1))
         self.__monton[self.getCantidadElementos()-1] = None
-        self.__ordenarDesdeArriba(PRIMERA_POSCICION)
+        self.__ordenarDesdeArriba(self.POSCICION_RAIZ)
         return elemento
 
     #METODOS INTERNOS
@@ -591,8 +600,8 @@ class Heap(Generic[T], TypeStruct):
     def __estaLleno(self):
         """Verifica que el heap este lleno
         
-        RETURN
-            **bool** Verdadero si ningun elemento es None, Falso si al menos uno es None
+        **return**
+            -   (bool) Verdadero si ningun elemento es None, Falso si al menos uno es None
         """
         lleno = True
         i = 0
@@ -606,11 +615,11 @@ class Heap(Generic[T], TypeStruct):
     def __subArbolCompleto(self, poscicion:int)-> bool:
         """Dado una poscicion en el heap, verifica que un subarbol con raiz en el elemento de la poscicion, este completo
         
-        PARAMETROS:
-            -   poscision **int**
+        **parameters**
+            -   poscision (int)
         
-        RETURN:
-            Verdadero si el elemento no tiene hijos o si ambos hijos estan completos, falso si tiene un solo hijo o si ambos hijos estan incompletos 
+        **return**
+            -   (bool) Verdadero si el elemento no tiene hijos o si ambos hijos estan completos, falso si tiene un solo hijo o si ambos hijos estan incompletos 
         """
         if (not self.__tieneHijos(poscicion)):
             return True
@@ -618,25 +627,25 @@ class Heap(Generic[T], TypeStruct):
             return False
         return (self.__subArbolCompleto(self.__ubicacionHijoIzq(poscicion)) and self.__subArbolCompleto(self.__ubicacionHijoDer(poscicion)))
 
-    def __generarMonton(self, tamanio:int) -> list[T]:
+    def __generarMonton(self, tamanio:int) -> list[Generic[T]]:
         """Genera un monton
     
-        PARAMETROS:
-            -   tamanio **int**
+        **parameters**
+            -   tamanio (int)
 
-        RETURN:
-            **list[Tipo Ingresado]** una lista llena de None 
+        **return**
+            -   **list[Tipo Ingresado]** una lista llena de None 
         """
         return [None]*tamanio
     
     def __ubicacionHijoIzq(self, poscicion:int) -> int:
         """Dada una poscicion del heap, retorna la poscicion del hijo izquierdo
         
-        PARAMETRO:
-            -   poscicion **int**
+        **parameters**
+            -   poscicion (int)
         
-        RETURN:
-            **int** 2*poscicion+1
+        **return**
+            -   (int) 2*poscicion+1
         """
         return  2*poscicion+1
 
@@ -644,22 +653,22 @@ class Heap(Generic[T], TypeStruct):
     def __ubicacionHijoDer(self, poscicion:int) -> int:
         """Dada una poscicion del heap, retorna la poscicion del hijo derecho
         
-        PARAMETRO:
-            -   poscicion **int**
+        **parameters**
+            -   poscicion (int)
         
-        RETURN:
-            **int** 2*poscicion+2
+        **return**
+            -   (int) 2*poscicion+2
         """
         return  2*poscicion+2
 
     def __ubicacionPadre(self, poscicion:int) -> int:
         """Dada una poscicion del heap, retorna la poscicion del padre
         
-        PARAMETROS:
-            -   poscicion **int**
+        **parameters**
+            -   poscicion (int)
 
-        RETURN:
-            **int** (poscicion-1)//2
+        **return**
+            -   (int) (poscicion-1)//2
         """
 
         return (poscicion-1)//2
@@ -667,22 +676,22 @@ class Heap(Generic[T], TypeStruct):
     def __hijoIzquierdo(self, poscicion:int) -> T:
         """Dado una poscicion del heap, retorna al hijo izquierdo
 
-        PARAMETROS:
-            -   poscicion **int**
+        **parameters**
+            -   poscicion (int)
         
-        RETURN:
-            **Tipo ingresado** elemento en la poscicion 2*poscicion+1
+        **return**
+            -   (T) elemento en la poscicion 2*poscicion+1
         """
         return self.__getItem(self.__ubicacionHijoIzq(poscicion))
         
     def __hijoDerecho(self, poscicion:int) -> T:
         """Dado una poscicion del heap, retorna al hijo derecho
 
-        PARAMETROS:
-            -   poscicion **int**
+        **parameters**
+            -   poscicion (int)
         
-        RETURN:
-            **Tipo ingresado** elemento en la poscicion 2*poscicion+2
+        **return**
+            -   (T) elemento en la poscicion 2*poscicion+2
         """
         return self.__getItem(self.__ubicacionHijoDer(poscicion))
 
@@ -690,11 +699,11 @@ class Heap(Generic[T], TypeStruct):
         """Dada una posicicon del heap, verifica que el elemento en esa poscicion
         Tenga hijos
         
-        PARAMETROS:
-            -   poscicion **int**
+        **parameters**
+            -   poscicion (int)
 
-        RETURN:
-            **bool** Verdadero si el elemento tiene al menos un hijo, falso si no tiene ningun hijo
+        **return**
+            -   (bool) Verdadero si el elemento tiene al menos un hijo, falso si no tiene ningun hijo
         """ 
         try:
             return self.__hijoIzquierdo(poscicion) != None
@@ -706,11 +715,11 @@ class Heap(Generic[T], TypeStruct):
         """Dada una posicicon del heap, verifica que el elemento en esa poscicion
         tenga ambos hijos
         
-        PARAMETROS:
-            -   poscicion **int**
+        **parameters**
+            -   poscicion (int)
 
-        RETURN:
-            **bool** Verdadero si el elemento tiene ambos hijos, falso si no tiene al menos un hijo
+        **return**
+            -   (bool) Verdadero si el elemento tiene ambos hijos, falso si no tiene al menos un hijo
         """ 
         try:
             return self.__hijoDerecho(poscicion) != None
@@ -728,25 +737,25 @@ class Heap(Generic[T], TypeStruct):
     def __intercambio(self, padre:int, hijo:int):
         """Dado la direccion de la semilla padre y la direccion de un hijo, los intercambia de lugar
         
-        PARAMETROS:
-            -   padre **int** poscicion padre
-            -   hijo **int** poscicion hijo
+        **parameters**
+            -   padre (int) poscicion padre
+            -   hijo (int) poscicion hijo
         """
         aux = self.__getItem(padre)
         self.__monton[padre] = self.__getItem(hijo)
         self.__monton[hijo] = aux
 
-    def __esMenor(self, padre:T, hijo:T) -> bool:
+    def __esMenor(self, padre:Generic[T], hijo:Generic[T]) -> bool:
         """Dado el dato de una semilla padre y una semilla hijo, verifica que el padre sea menor que el hijo.
         Se hara la comparacion entre padre o hijo directamente si no hay un metodo especificado,
-        si lo hay, se comparara el resultado del metodo al ingresarle el parametro padre o hijo.
+        si lo hay, se comparara el resultado del metodo al ingresarle el **parameters**padre o hijo.
         
-        PARAMETROS:
-            -   padre **Tipo Ingresado**
-            -   hijo **Tipo Ingresado**
+        **parameters**
+            -   padre (T)
+            -   hijo (T)
 
-        RETURN:
-            **bool** verdadero si la comparacion verifica que padre es menor que hijo o que metodo(padre) es menor que metodo(hijo), falso si padre es mayor que hijo o si metodo(padre) es mayor que metodo(hijo)
+        **return**
+            -   (bool) verdadero si la comparacion verifica que padre es menor que hijo o que metodo(padre) es menor que metodo(hijo), falso si padre es mayor que hijo o si metodo(padre) es mayor que metodo(hijo)
         """
         if (self.__getMetodo() == None):
             return (padre < hijo)
@@ -758,9 +767,9 @@ class Heap(Generic[T], TypeStruct):
         presuntamente la de un elemento hijo y un elemento padre,
         intercambia los elementos si el elemento padre es mayor que el elemento hijo
 
-        PARAMETROS:
-            -   padre **int**
-            -   hijo **int**
+        **parameters**
+            -   padre (int)
+            -   hijo (int)
         """
         if (not self.__esMenor(self.__getItem(padre),self.__getItem(hijo))):
             self.__intercambio(padre,hijo)
@@ -769,11 +778,11 @@ class Heap(Generic[T], TypeStruct):
     def __hijoMenor(self, poscicion:int) -> int:
         """Dado una poscicion, retorna la ubicacion del hijo mas pequeño deñ elemento de la poscicion ingresada
          
-        PARAMETROS:
-            -   poscicion **int**
+        **parameters**
+            -   poscicion (int)
 
         RETURNS:
-            **int** 2*poscicion+1 o 2*poscicion+2
+            (int) 2*poscicion+1 o 2*poscicion+2
         """
         
         if self.__esMenor(self.__hijoIzquierdo(poscicion),self.__hijoDerecho(poscicion)):
@@ -784,18 +793,18 @@ class Heap(Generic[T], TypeStruct):
     def __ordenarDesdeAbajo(self, poscicion:int):
         """Ordena el heap desde un elemento hijo, en la poscicion ingresada, hasta la raiz
         
-        PARAMETROS:
-            -   poscicion **int** poscicion hijo
+        **parameters**
+            -   poscicion (int) poscicion hijo
         """
-        if (poscicion > PRIMERA_POSCICION):
+        if (poscicion > self.POSCICION_RAIZ):
             self.__organizarHeap(self.__ubicacionPadre(poscicion), poscicion)
             self.__ordenarDesdeAbajo(self.__ubicacionPadre(poscicion))
 
     def __ordenarDesdeArriba(self,poscicion:int):
         """Ordena el heap desde un elemento padre, en la poscicion ingresada, hasta un elemento hijo
         
-        PARAMETROS:
-            -   poscicion **int** poscicion padre
+        **parameters**
+            -   poscicion (int) poscicion padre
         """
         if (self.__tieneAmbosHijos(poscicion)):
             hijoMenor = self.__hijoMenor(poscicion)
@@ -807,7 +816,7 @@ class Heap(Generic[T], TypeStruct):
     #METODOS ESTATICOS
 
     @staticmethod
-    def ordenarPorMinimo(vector:list[T], metodo = None):
+    def ordenarPorMinimo(vector:list[Generic[T]], metodo = None):
         """dado un vector ingresado, se ordenan los elementos mediante el algoritmo HeapMinSort de menor a mayor.
         Si se ingresa un metodo, entonces se considerara el metodo para ser ordenado.
 
@@ -824,7 +833,7 @@ class Heap(Generic[T], TypeStruct):
             raise TypeError("Para que funcione el ordenamiento, todos los elementos de la lista ingresada deben ser del mismo tipo")
 
     @staticmethod
-    def ordenarPorMaximo(vector:list[T], metodo = None):
+    def ordenarPorMaximo(vector:list[Generic[T]], metodo = None):
         """dado un vector ingresado, se ordenan los elementos mediante el algoritmo HeapMinSort de mayor a menor.
         Si se ingresa un metodo, entonces se considerara el metodo para ser ordenado.
 
@@ -841,38 +850,30 @@ class Heap(Generic[T], TypeStruct):
             raise TypeError("Para que funcione el ordenamiento, todos los elementos de la lista ingresada deben ser del mismo tipo")
                        
 
-    #METODOS HEREDADOS
-
-    def __repr__(self) -> str:
-        """No tengo ni idea que hace esta cosa pero sirve bien para ver el contenido del heap al debuguear"""
-        return str(self.__monton)
-
     #GETTERS
-    def getCapacidadMaxima(self): return len(self.__monton)
-
-    def __getUltimaPos(self): return self.getCapacidadMaxima() -1
+    def getCapacidadMaxima(self) -> int:
+        return len(self.__monton) 
 
     def getCantidadElementos(self) -> int:
         """Cuenta la cantidad de elementos no nulos en el heap
         
-        RETURN:
-            **int** cantidad elementos almacenados
+        **return**
+            -   (int) cantidad elementos almacenados
         """
         esNulo = True
-        i = self.__getUltimaPos()
+        i = self.getCapacidadMaxima()
 
-        while(esNulo and (i >= PRIMERA_POSCICION)):
-            esNulo = self.__getItem(i) is None
-            if not esNulo:
-                i -= 1 
-
+        while (i > 0) and esNulo:
+            esNulo = self.__getItem(i-1) is None
+            i-= 1
+            
         return i
 
     def getNiveles(self) -> int:
         """Cuenta la cantidad de niveles del heap
         
-        RETURN:
-            **int** cantidad de niveles
+        **return**
+            -   (int) cantidad de niveles
             
         """
         niveles = 0
@@ -889,29 +890,29 @@ class Heap(Generic[T], TypeStruct):
     def __getItem(self, i:int) -> T:
         """Retorna el elemento en la poscicion i
         
-        -   PARAMETROS:
-            -   **int** i: entre 0 y el largo del vector
+        -   **parameters**
+            -   i (int): entre 0 y el largo del vector
         
-        -   EXCEPCIONES:
+        -   **excepciones**
             -   **IndexError** : si el indice i se sale del rango
         """
-        validarRango(i, PRIMERA_POSCICION, self.__getUltimaPos())
+        if ((i < 0) or (i>= len(self.__monton))): raise IndexError("Indice fuera de rango")
         return self.__monton[i]
     
 
     def __getRaiz(self) -> T:
         """Obtiene el elemento en la raiz del heap
         
-        RETURN:
-            **Tipo ingresado** raiz del heap
+        **return**
+            -   (T) raiz del heap
         """
-        return self.__getItem(PRIMERA_POSCICION)
+        return self.__getItem(self.POSCICION_RAIZ)
 
     def __getMetodo(self):
         """Obtiene el metodo de comparacion
         
-        RETURN
-            **function**
+        **return**
+            -   (function)
         """
         return self.__metodoOrdenamiento
 
@@ -919,10 +920,10 @@ class Heap(Generic[T], TypeStruct):
         """Aplica el metodo de comparacion a un elemento del heap
 
         PARAMETOS:
-            -   elemento **Tipo ingresado**: elemento en el heap
+            -   elemento (T): elemento en el heap
 
-        RETURN:
-            -   **tipo comparable** el resultado de aplicarle el metodo al elemento 
+        **return**
+            -  (T) el resultado de aplicarle el metodo al elemento 
         """
         return self.__metodoOrdenamiento(elemento)
 
@@ -931,7 +932,7 @@ class Heap(Generic[T], TypeStruct):
     def __setRaiz(self, elemento:T):
         """Setea la raiz del heap
         
-        PARAMETROS:
-            -   elemento **Tipo Ingersado** elemento del heap 
+        **parameters**
+            -   elemento (T) elemento del heap 
         """
-        self.__monton[PRIMERA_POSCICION] = elemento
+        self.__monton[self.POSCICION_RAIZ] = elemento

@@ -11,6 +11,7 @@ for i in range(10):
 vector = Vector(int, heap.getCantidadElementos())
 
 while not heap.estaVacio():
+    print(vector)
     vector.agregar(heap.quitar())
 
 print(vector)

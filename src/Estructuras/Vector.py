@@ -465,7 +465,6 @@ class Cola(Generic[T], TypeStruct):
     def getLongitud(self):
         return len(self)
 
-
 #PILA-------------------------------------------------------------------------------------------------------------------------------------------
 
 class Pila(Generic[T], TypeStruct):
@@ -517,8 +516,8 @@ class Heap(Generic[T], TypeStruct):#CONSTANTES
     POSCICION_RAIZ = 0
 
     #ATRIBUTOS
-    __monton:list
-    __metodoOrdenamiento = None
+    __monton:Vector[T]
+    __metodo:function
 
     #CONSTRUCTORES
     def __init__(self, tipo:type, metodo =None):
@@ -530,8 +529,8 @@ class Heap(Generic[T], TypeStruct):#CONSTANTES
         if (not callable(metodo) and (metodo is not None)): raise TypeError("Se debe ingresar una funcion que retorna comparables")
 
         super().__init__(tipo)
-        self.__monton = self.__generarMonton(1)
-        self.__metodoOrdenamiento = metodo
+        self.__setMetodo(metodo)
+        self.__monton = Vector(self.getType(),1)
 
     #METODOS GENERALES
     def __repr__(self) -> str:

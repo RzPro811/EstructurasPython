@@ -9,3 +9,4 @@ src/Estructuras.egg-info/SOURCES.txt
 src/Estructuras.egg-info/dependency_links.txt
 src/Estructuras.egg-info/top_level.txt
 src/Estructuras/Excepciones/Generales.py
+src/Estructuras/Excepciones/Grafo.py

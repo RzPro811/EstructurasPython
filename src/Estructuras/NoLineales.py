@@ -126,7 +126,7 @@ class Heap(Generic[T], TypeStruct):#CONSTANTES
         
         **return**
             -    (bool) Verdadero si todos los elementos son None, falso si al menos uno no es None"""
-        return (self.__getCapacidadMaxima() is 1) and (self.__getItem(PRIMERA_POSCICION) is None)
+        return (self.__getCapacidadMaxima() == 1) and (self.__getItem(PRIMERA_POSCICION) is None)
 
     def estaCompleto(self) -> bool:
         """Verifica que el heap este completo
@@ -166,10 +166,13 @@ class Heap(Generic[T], TypeStruct):#CONSTANTES
         validarCondicion(self.estaVacio(), "El Heap esta vacio", VacioError)
 
         elemento = self.__getRaiz()
-        print(self.getCantidadElementos())
         self.__setRaiz(self.__getItem(self.getCantidadElementos()-1))
         self.__monton[self.getCantidadElementos()-1] = None
         self.__ordenarDesdeArriba(PRIMERA_POSCICION)
+
+        if self.__ultimoNivelVacio() and not self.estaVacio():
+            self.__contraer()
+
         return elemento
 
     #METODOS INTERNOS
@@ -208,6 +211,22 @@ class Heap(Generic[T], TypeStruct):#CONSTANTES
         """
         return [None]*tamanio
     
+    def __pow2(self, num:int) -> int:
+        if num == 0:
+            return 1
+        return self.__pow2(num - 1) * 2
+
+    def __ultimoNivelVacio(self):
+        i = self.__getCapacidadMaxima()
+        tramo = i/2  
+        vacio = True
+        
+        while (i >= tramo) and vacio:
+            i-= 1
+            vacio = self.__getItem(i) is None
+
+        return vacio
+
     def __ubicacionHijoIzq(self, poscicion:int) -> int:
         """Dada una poscicion del heap, retorna la poscicion del hijo izquierdo
         
@@ -298,9 +317,13 @@ class Heap(Generic[T], TypeStruct):#CONSTANTES
 
     def __expandir(self):
         """Expande la lista monton"""
-        self.__monton.extend(self.__generarMonton(self.__getCapacidadMaxima()))
+        self.__monton.extend(self.__generarMonton(self.__pow2(self.getNiveles())))
 
-        
+    def __contraer(self):
+
+        for i in range(self.__pow2(self.getNiveles() )):
+            self.__monton.pop()
+            
     
     def __intercambio(self, padre:int, hijo:int):
         """Dado la direccion de la semilla padre y la direccion de un hijo, los intercambia de lugar

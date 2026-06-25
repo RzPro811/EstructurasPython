@@ -7,6 +7,7 @@ E = TypeVar("E")
 
 SIN_ADYACENCIA = 0
 ADYAENCIA = 1
+AUTO_ADYACENCIA = 2
 
 #VERTICE-------------------------------------------------------------------------------------------------------------------
 class Vertice(Generic[V], TypeStruct):
@@ -222,14 +223,104 @@ class Cursor(Generic[V,E]):
 
 #GRAFO---------------------------------------------------------------------------------------------------------------------
 class Grafo(Generic[V,E]):
+    #CONSTANTES
+    __ULTIMO_AGREGADO = -1
     #ATRIBUTOS
     __vertices:list[Vertice[V]]
+    __aristas:list[Arista[E]]
     __adyacencia:list[list[int]]
+    
     __orientado:bool
+    
     __tipoVertice:TypeStruct
     __tipoArista:TypeStruct
 
     #CONSTRUCTOR
+    def __init__(self, tipoVertice:type, tipoArista:type = None, orientado:bool = False):
+        self.setTipos(tipoVertice,tipoArista)
+        self.__vertices = []
+        self.__aristas = []  
+        self.__orientado = orientado
+        self.__adyacencia = []
+
+    #METODOS GENERALES
+    def __str__(self):
+        cadena = f"Grafo <{self.getTipoVertice().__name__};"
+
+        if self.getTipoArista() is not None: cadena +=f"{self.getTipoArista().__name__}>\nVertices: "
+        else: cadena += "None>\nVertices: "
+
+        i = 0
+        for vertice in self.__vertices:
+            cadena+=f"({i}) {vertice.getDato()};"
+            i+=1
+        
+        if self.getTipoArista() is not None:
+            cadena += "\n Aristas: "
+            for arista in self.__aristas:
+                cadena += f"({arista.getInicio()};"
+                if arista.getFinal() is not None:
+                    cadena += f"{arista.getFinal()})"
+                else:
+                    cadena += f"{arista.getInicio()})"
+                cadena += f"{arista.getDato()}; "
+        
+        return cadena +"\n"
+    
+    
+    #METODOS DE CLASE
+    def esOrientado(self) -> bool:
+        return self.__orientado
+
+    def agregarVertice(self, dato:V):
+        self.__validarTipoV(dato)
+        self.__actualizarVertices(Vertice(self.getTipoVertice(),dato))
+
+    def conectarVertices(self, indice:int, jndice:int, dato:E = None):
+        self.__validarTipoE(dato)
+        self.__valdiarIndices(indice, jndice)
+
+        if indice == jndice:
+            arista = Arista(self.getTipoArista(), dato, indice)
+        elif self.esOrientado():
+            arista = Arista(self.getTipoArista(),dato, indice, jndice)
+        else:
+            arista = Arista(self.getTipoArista(), dato)
+
+        self.__actualizarAristas(indice,jndice, arista)
+
+
+    #METODOS INTERNOS
+    def __actualizarVertices(self, vertice:Vertice[V]):
+        self.__vertices.append(vertice)
+        self.__adyacencia.append([])
+
+        for arista in self.__aristas:
+            self.__adyacencia[Grafo.__ULTIMO_AGREGADO].append(SIN_ADYACENCIA)
+
+    def __actualizarAristas(self, indice:int, jndice:int, arista:Arista[E]):
+        self.__aristas.append(arista)
+        
+        for i in range(len(self.__vertices)):
+            if (i != indice ) and (i != jndice):
+                self.__adyacencia[i].append(SIN_ADYACENCIA)
+            elif (indice == jndice):
+                self.__adyacencia[i].append(AUTO_ADYACENCIA)
+            else:
+                self.__adyacencia[i].append(ADYAENCIA)
+
+    #VALIDACIONES
+    def __valdiarIndices(self, indice:int, jndice:int):
+        validarTipoObjeto(int, indice)
+        validarTipoObjeto(int, jndice)
+        validarRango(indice,PRIMERA_POSCICION,len(self.__vertices) -1)
+        validarRango(jndice,PRIMERA_POSCICION,len(self.__vertices) -1)
+
+    def __validarTipoV(self, dato:V):
+        self.__tipoVertice.__validarEntrada__(dato)
+        
+    def __validarTipoE(self, dato:E):
+        self.__tipoArista.__validarEntrada__(dato,True)
 
     #GETTERS
     

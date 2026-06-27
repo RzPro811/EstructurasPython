@@ -289,6 +289,10 @@ class Grafo(Generic[V,E]):
         elif (peso is not None):
             raise TipoGrafoIncompatible("Esta operacion no se puede hacer porque el grafo no está pesado")
 
+    #CURSOR
+    class Cursor:
+        __dato:V
+
     #ESTATICOS
     @staticmethod
     def validarGrafo(grafo:Grafo):
@@ -392,6 +396,9 @@ class Grafo(Generic[V,E]):
     def __setTiposDatos(self, tipoVertices:type, tipoAristas:type = None):
         self.__tipoV = TypeStruct(tipoVertices)
         self.__tipoE = TypeStruct(tipoAristas)
+
+
+
 
 
 #Digrafo ------------------------------------------------------------------------------------------------------

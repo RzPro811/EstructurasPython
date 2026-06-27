@@ -1,345 +1,326 @@
-from .Validaciones import TypeStruct, TypeVar, Generic, validarCondicion, validarRango, validarTipoObjeto, validarTipo
-from .Vector import PRIMERA_POSCICION
+from .Validaciones import TypeStruct, TypeVar, Generic, validarValorCompatible, validarCondicion, validarRango, validarTipoObjeto, validarNoNegativo, Enum
 from .Excepciones.Grafo import *
+from typing import Generator
 
 V = TypeVar("V")
 E = TypeVar("E")
 
 SIN_ADYACENCIA = 0
 ADYAENCIA = 1
-AUTO_ADYACENCIA = 2
-
-#VERTICE-------------------------------------------------------------------------------------------------------------------
-class Vertice(Generic[V], TypeStruct):
-    #ATRIBUTOS
-    __dato:V
-    __adyacencia:list[Vertice[V]]
-
-    #CONSTRUCTORES
-    def __init__(self, tipo:type, dato:V):
-        """Dado un tipo de dato y un dato, crea un vertice de Grafo
-        
-        **parameters**
-            -   tipo (type)
-            -   dato (V)
-
-        **excepciones**
-            -   **TypeError**: si el tipo ingresado no es type o si el dato no es del tipo ingresado
-        """
-        super().__init__(tipo)
-        self.setDato(dato)
-        self.__adyacencia = []
-
-    #METODOS DE CLASE
-    def conectar(self, vertice:Vertice):
-        """Conecta este vertice con otro vertice
-
-        **parameters**
-            -   vertice (Vertice)
-        
-        **excepciones**
-            -   **TypeError**: si el vertice ingresado no es type o comparten el mismo tipo de dato (incluyendo herencia)
-        """
-        self.__validarConexion(vertice)
-        self.__adyacencia.append(vertice)
-
-    def desconectar(self, vertice:Vertice):
-        """Dado un vertice adyacente a este vertice, lo desconecta
-
-        **parameters**
-            -   vertice (Vertice): deben estar conectado
-
-        **excepciones**
-            -   **TypeError**: si el vertice ingresado no es vertice 
-            -   **AdyacenciaError**: si el vertice ingresado no es adyacente a este vertice
-        """
-        self.__validarDesconexión(vertice)
-        self.__adyacencia.remove(vertice)
-
-    #VALIDACIONES
-    def __validarConexion(self, vertice:Vertice[V]):
-        """Valida que un vertice con el cual vamos a conectar, sea valido
-
-        **parameters**
-            -   vertice (Vertice): tiene que soportar el mismo tipo de dato, o subclase, del vertice original
-
-        **excepciones**
-            -   **TypeError**: si el vertice ingresado no es vertice o su tipo asignado no es el mismo, o no es subclase, que el tipo del vertice original
-        """
-        self.validarVertice(vertice)
-        validarCondicion(not issubclass(vertice.getType(),self.getType() or not issubclass(self.getType(), vertice.getType())),
-                         "La clase del vertice con el que intentamos realizar la conexión no es valida", TypeError)
-            
-    def __validarDesconexión(self, vertice:Vertice[V]):
-        """Valida que un vertice este conectado
-
-        **parameters**
-            -   vertice (Vertice): deben estar conectado
-
-        **excepciones**
-            -   **TypeError**: si el vertice ingresado no es vertice 
-            -   **AdyacenciaError**: si el vertice ingresado no es adyacente a este vertice
-        """
-        self.validarVertice(vertice)
-        validarCondicion(vertice not in self.__adyacencia, "El vertice ingresado no es adyacente a este vertice", AdyacenciaError)
-
-    @staticmethod
-    def validarVertice(vertice:Vertice):
-        """Valida que un vertice sea un vertice
-        
-        **parameters**
-            -  vertice (Vertice)
-
-        **excepciones**:
-            -   TypeError: si el parametro ingresado no es un vertice
-        """
-        validarTipoObjeto(Vertice,vertice,"Ingrese un vertice")
-
-    #GETTERS
-
-    #calculables
-    def getGrado(self) -> int:
-        """Retorna el grado del vertice, es decir, con cuantos vertices tiene adyacencia
-        
-        **return**
-            -   (int) cantidad de vertices con los que limita
-        """
-        return len(self.__adyacencia)
-    
-    def getVerticeAdyacente(self, pos:int) -> Vertice[V]:
-        
-        return self.__adyacencia[pos]
 
 
-    #atributos
-    def getDato(self) -> V:
-        """Retorna el tipo de dato almacenado en el vertice del grafo
-        
-        **return**
-            -   **V**: dato 
-        """
-        return self.__dato
-
-    #SETTERS
-    def setDato(self, dato:V):
-        """Setea el dato almacenado en el vertice del grafo
-        
-        **parameters**
-            -   dato **V**: tipo de dato
-        
-        **Excepciones**
-            -   **TypeError**: si el dato no es el tipo que admite el vertice
-        """
-        self.__validarEntrada__(dato)
-        self.__dato = dato
-
-
-
-#ARISTA--------------------------------------------------------------------------------------------------------------------
-class Arista(Generic[E], TypeStruct):
-    #ATRIBUTOS
-    __dato:E
-    __indiceInicio:int
-    __indiceFinal:int
-    
-    #CONSTRUCTOR
-    def __init__(self, tipo:type, dato:E = None, inicio:int = None, final:int = None):
-        """Dado un tipo de dato y un dato, crea una Arista de grafo. 
-        introduce un indice de vertice inicial y final si la arista esta orientada,
-        introduzca un indice inicial int y uno final None si la arista entra y sale del mismo vertice
-        o introduzca ambos indices como None si la arista no esta orientada
-
-        **parameters**
-            -   tipo (type)
-            -   dato (E): Por defecto None. Del tipo ingresado por parametro, si el tipo ingresado es None, el dato debe permanecer como None
-            -   inicio (int): por defecto None
-            -   final (int): por defecto None. Si inicio es None, final debe permanecer siendo None
-
-        **excepciones**
-            -   **TypeError**: si alguno de los datos ingresados no es del tipo que les corresponde
-            -   **AdyacenciaError**: si el parametro inicio es None y el parametro final es int
-        """
-        self.__setType(tipo)        
-        self.setDato(dato)
-        self.setExtremos(inicio, final)
-
-    #VALIDACIONES
-    def __validarExtremos(self, inicio:int, final:int):
-        if inicio is not None:    
-            validarTipoObjeto(int, inicio, "Ingrese un indice inicial entero o None")
-
-        if final is not None:
-            validarCondicion(inicio is None, "No se permite tener un inicio None y final entero", AdyacenciaError)
-            validarTipoObjeto(int, final, "Ingrese un indice final entero o None")
-    
-
-    #GETTERS
-    def getDato(self) -> E:
-        """Retorna el tipo de dato almacenado en la arista del grafo
-        
-        **return**
-            -   **E**: dato 
-        """
-        return self.__dato
-    
-    def getInicio(self) -> int:
-        return self.__indiceInicio
-
-    def getFinal(self) -> int:
-        return self.__indiceFinal 
-
-    #SETTERS
-    def setDato(self, dato:E):
-        """Setea el dato almacenado en la arista del grafo
-        
-        **parameters**
-            -   dato **E**: tipo de dato
-        
-        **Excepciones**
-            -   **TypeError**: si el dato no es el tipo que admite la arista
-        """
-        self.__validarEntrada__(dato, True)
-        self.__dato = dato
-
-    def setExtremos(self, inicio:int, final:int):
-        self.__validarExtremos(inicio, final)
-        self.__indiceInicio = inicio
-        self.__indiceFinal = final
-
-    #HERENCIA
-
-    #setters
-    def __setType(self, tipo:type):
-        if tipo is not None: validarTipo(tipo)
-        self.__tipo = None
-
-
-#CURSOR--------------------------------------------------------------------------------------------------------------------
-class Cursor(Generic[V,E]):
-    #ATRIBUTOS
-    __vertice:Vertice[V]
-    __aristas:list[Arista[E]]
-
-
-#GRAFO---------------------------------------------------------------------------------------------------------------------
 class Grafo(Generic[V,E]):
     #CONSTANTES
-    __ULTIMO_AGREGADO = -1
-    #ATRIBUTOS
-    __vertices:list[Vertice[V]]
-    __aristas:list[Arista[E]]
+    
+    #listas de elementos
+    __vertices:dict[V,int]
+    __aristas:list[list[E]]
+    
+    #configuracion del grafo
     __adyacencia:list[list[int]]
-    
-    __orientado:bool
-    
-    __tipoVertice:TypeStruct
-    __tipoArista:TypeStruct
+    __pesos:list[list[int]]
+    __pesado:bool
+
+    #tipos de datos
+    __tipoV:TypeStruct 
+    __tipoE:TypeStruct
 
     #CONSTRUCTOR
-    def __init__(self, tipoVertice:type, tipoArista:type = None, orientado:bool = False):
-        self.setTipos(tipoVertice,tipoArista)
-        self.__vertices = []
-        self.__aristas = []  
-        self.__orientado = orientado
+    def __init__(self, tipoVertices:type, tipoAristas:type = None, pesado:bool = False):
+        """Construye un grafo dado un tipo de vertices
+        
+        **parameters**
+            -   tipoVertices (type)
+            -   tipoAristas (type): por default None. Setea un tipo de dato para almacenar cosas en las aristas de los grafos
+            -   pesado (bool): por default False. Si es True, el grafo será un grafo pesado.  
+
+        **excepciones**
+            -   **TypeError**: Si ninguno de los datos ingresados es del tipo correspondiente  
+        """
+        self.__setTiposDatos(tipoVertices, tipoAristas)
+        validarTipoObjeto(bool,pesado, "Ingresa verdadero para pesar el grafo o falso para no setearlo")
+
+        self.__vertices = {}
+        self.__aristas = []
         self.__adyacencia = []
 
-    #METODOS GENERALES
-    def __str__(self):
-        cadena = f"Grafo <{self.getTipoVertice().__name__};"
+        self.__pesado = pesado
 
-        if self.getTipoArista() is not None: cadena +=f"{self.getTipoArista().__name__}>\nVertices: "
-        else: cadena += "None>\nVertices: "
+        if (self.esPesado()):
+            self.__pesos = []
 
-        i = 0
+    #METODOS GENERALES 
+    def __iter__(self) -> Generator[V]:
+        """Cada iteracion retorna un vertice"""
         for vertice in self.__vertices:
-            cadena+=f"({i}) {vertice.getDato()};"
-            i+=1
+            yield vertice
         
-        if self.getTipoArista() is not None:
-            cadena += "\n Aristas: "
-            for arista in self.__aristas:
-                cadena += f"({arista.getInicio()};"
-                if arista.getFinal() is not None:
-                    cadena += f"{arista.getFinal()})"
-                else:
-                    cadena += f"{arista.getInicio()})"
-                cadena += f"{arista.getDato()}; "
-        
-        return cadena +"\n"
-    
-    
     #METODOS DE CLASE
-    def esOrientado(self) -> bool:
-        return self.__orientado
+    def esPesado(self) -> bool:
+        """Verifica que el grafo esté pesado
+        
+        **return**
+            -   (bool) Verdadero si el grafo es pesado, falso si no
+        """
+        return self.__pesado
 
-    def agregarVertice(self, dato:V):
-        self.__validarTipoV(dato)
-        self.__actualizarVertices(Vertice(self.getTipoVertice(),dato))
+    def esPlanar(self):
+        return self.getCantidadAristas() <= 3*(self.getCantidadVertices()-2) 
+    
+    def esEuleriano(self):
+        for vertice in self:
+            if self.getGradoVertice(vertice) % 2 == 1:
+                return False
+            
+        return True
+    
+    def esSemiEuleriano(self):
+        verticesImpares = 0
 
-    def conectarVertices(self, indice:int, jndice:int, dato:E = None):
-        self.__validarTipoE(dato)
-        self.__valdiarIndices(indice, jndice)
+        for vertice in self:
+            if self.getGradoVertice(vertice) % 2 == 1:
+                verticesImpares +=1
 
-        if indice == jndice:
-            arista = Arista(self.getTipoArista(), dato, indice)
-        elif self.esOrientado():
-            arista = Arista(self.getTipoArista(),dato, indice, jndice)
-        else:
-            arista = Arista(self.getTipoArista(), dato)
+            if verticesImpares > 2:
+                return False
+            
+        return verticesImpares == 2
 
-        self.__actualizarAristas(indice,jndice, arista)
+    def estaConectado(self, vertice1:V, vertice2:V) -> bool:
+        """Dados dos vertices del grafo, verifica que estén conectados
+        
+        **parameters**
+            -   vertice1 (V): pertenece al grafo
+            -   vertice2 (V): pertenece al grafo
+
+        **return**
+            -   (bool): Verdadero si en sus respectivos indices de la matriz de adyacencia es 1
+
+        **excepciones**
+            -   **TypeError**: si los vertices no son del tipo ingresado V
+            -   **VerticeNoEncontradoError**: si al menos un vertice no pertence al grafo
+        """
+        self.__validarVertice(vertice1)
+        self.__validarVertice(vertice2)
+        return self.__adyacencia[self.__indiceVertice(vertice1)][self.__indiceVertice(vertice2)] == ADYAENCIA
+
+    def agregarVertice(self, vertice:V):
+        """Agrega un vertice al conjunto de vertices del grafo si es que no está ya en el conjunto de vertices
+        
+        **parameters**
+            -   vertice (V): no es parte del grafo
+
+        **excepciones**
+            -   **TypeError**: si el vertice no es del tipo ingresado V
+            -   **VerticeDobleError**: si el vertice ya es parte del grafo
+        """
+        self.__validarEntradaVertice(vertice)
+
+        self.__vertices.update({vertice:self.getCantidadVertices()})
+        self.__actualizarMatriz(self.__adyacencia, SIN_ADYACENCIA)
+        self.__actualizarMatriz(self.__aristas, None)
+        if self.esPesado():
+            self.__actualizarMatriz(self.__pesos)
+
+    def eliminarVertice(self, vertice:V):
+        """Dado un vertice del grafo, lo elimina"""
+        self.__validarVertice(vertice)
+        indice = self.__indiceVertice(vertice)
+        
+        self.__desactualizarMatriz(self.__adyacencia, indice)
+        self.__desactualizarMatriz(self.__aristas, indice)
+        self.__vertices.pop(vertice)
+        self.__eliminarRastro()
+
+        if self.esPesado():
+            self.__desactualizarMatriz(self.__pesos, indice)
+
+
+    def conectarVertices(self, vertice1:V, vertice2:V, coneccion:E = None, peso:int = None):
+        """Dados dos vertices, los conecta. Si se ingresa un dato de arista o un peso, se ingresan como datos
+        
+        **parameters**
+            -   vertice1 (V): no debe estar conectado al vertice2
+            -   vertice2 (V): no debe estar conectado al vertice1
+            -   coneccion (E): por defecto None
+            -   peso (int): por defecto None. Mayor que cero
+
+        **excepciones**
+            -   **TypeError**: Si al menos uno de los datos no son de ninguno de los tipos especificados
+            -   **VerticeNoEncontradoError**: si alguno de los vertices no pertenece al grafo
+            -   **AdyacenciaError**: Si los datos ya estan conectados
+            -   **TipoGrafoIncompatible**: si se ingresa un peso siendo el grafo no pesado
+            -   **PesoInvalido**: si el peso es menor o igual a cero
+        """
+
+        self.__validarConexion(vertice1,vertice2,coneccion,peso)
+        self.__conectarVertices(vertice1,vertice2,ADYAENCIA,coneccion,peso)
+        self.__conectarVertices(vertice2,vertice1,ADYAENCIA,coneccion,peso)
+        
+
+    def desconectarVertices(self, vertice1:V, vertice2:V):
+        """Dados dos vertices del grafo, los conecta
+        
+        **parameters**
+            -   vertice1 (V): pertenece al grafo
+            -   vertice2 (V): pertenece al grafo
+
+        **excepciones**
+            -   **TypeError**: Si al menos uno de los datos no son de ninguno de los tipos especificados
+            -   **VerticeNoEncontradoError**: si alguno de los vertices no pertenece al grafo
+            -   **AdyacenciaError**: Si los datos no estan conectados
+        """
+        self.__validarDesconexion(vertice1, vertice2)
+        self.__conectarVertices(vertice1, vertice2, SIN_ADYACENCIA, SIN_ADYACENCIA)
+        if not self.estaConectado(vertice1, vertice2):
+            self.__conectarVertices(vertice2, vertice1, SIN_ADYACENCIA, SIN_ADYACENCIA)
 
 
     #METODOS INTERNOS
-    def __actualizarVertices(self, vertice:Vertice[V]):
-        self.__vertices.append(vertice)
-        self.__adyacencia.append([])
 
-        for arista in self.__aristas:
-            self.__adyacencia[Grafo.__ULTIMO_AGREGADO].append(SIN_ADYACENCIA)
+    def __actualizarMatriz(self, matriz:list[list[int]], dato:int|E):
+        if self.getCantidadVertices() == 1:
+            matriz.append([dato])
+            
+        else:
+            for listaAdyacencia in matriz:
+                listaAdyacencia.append(dato)
+            matriz.append([dato]*self.getCantidadVertices())
 
-    def __actualizarAristas(self, indice:int, jndice:int, arista:Arista[E]):
-        self.__aristas.append(arista)
+    def __desactualizarMatriz(self, matriz:list[list[int]], indice:int):
+        for listaAdyacencia in matriz:
+            listaAdyacencia.pop(indice)
+
+        matriz.pop(indice)
         
-        for i in range(len(self.__vertices)):
-            if (i != indice ) and (i != jndice):
-                self.__adyacencia[i].append(SIN_ADYACENCIA)
-            elif (indice == jndice):
-                self.__adyacencia[i].append(AUTO_ADYACENCIA)
-            else:
-                self.__adyacencia[i].append(ADYAENCIA)
+    def __eliminarRastro(self):
+        anterior = -1
+
+        for vertice in self.__vertices:
+            if self.__vertices[vertice] != anterior +1:
+                self.__vertices[vertice] -= 1
+
+            anterior = self.__vertices[vertice]
+
+    def __indiceVertice(self,vertice:V) -> int:
+        self.__validarVertice(vertice)
+        return self.__vertices[vertice]
+
+    def __conectarVertices(self, vertice1:V, vertice2:V, tipoAdyacencia:int, coneccion:E, peso:int):
+        i = self.__indiceVertice(vertice1)
+        j = self.__indiceVertice(vertice2)
+        validarValorCompatible(i,j,"No se puede conectar un vertice consigo mismo en este tipo de grafo",AdyacenciaError)
+
+        self.__adyacencia[i][j] = tipoAdyacencia
+        self.__aristas[i][j]    = coneccion 
+        
+        if self.esPesado():
+            self.__pesos[i][j] = peso
 
     #VALIDACIONES
-    def __valdiarIndices(self, indice:int, jndice:int):
-        validarTipoObjeto(int, indice)
-        validarTipoObjeto(int, jndice)
-        validarRango(indice,PRIMERA_POSCICION,len(self.__vertices) -1)
-        validarRango(jndice,PRIMERA_POSCICION,len(self.__vertices) -1)
+    def __validarConexion(self, vertice1:V, vertice2:V, coneccion:E, peso:int):
+        self.__validarVertice(vertice1)
+        self.__validarVertice(vertice2)
+        self.__validarArista(coneccion)        
+        self.__vaidarPeso(peso)
+        validarCondicion(self.estaConectado(vertice1, vertice2), "Estos vertices ya estan conectados", AdyacenciaError)
 
-    def __validarTipoV(self, dato:V):
-        self.__tipoVertice.__validarEntrada__(dato)
+    def __validarDesconexion(self, vertice1:V, vertice2:V):
+        self.__validarVertice(vertice1)
+        self.__validarVertice(vertice2)
+        validarCondicion(not self.estaConectado(vertice1, vertice2),"Estos vertices no estan conectados", AdyacenciaError)
+
+
+    def __validarEntradaVertice(self, vertice:V):
+        self.__tipoV.__validarEntrada__(vertice)
+        validarCondicion(vertice in self.__vertices.keys(),"Este vertice ya se añadió al grafo", VerticeDobleError)
+
+    def __validarVertice(self, vertice:V):
+        self.__tipoV.__validarEntrada__(vertice)
+        validarCondicion(vertice not in self.__vertices.keys(), 
+                         "Este vertice no pertenece al grafo", VerticeNoEncontradoError)
+
+    def __validarArista(self, arista:E):
+        self.__tipoE.__validarEntrada__(arista,True)
+                
+    def __vaidarPeso(self, peso:int):
+        if (self.esPesado()):
+            validarTipoObjeto(int, peso, "Ingrese un peso int")
+            validarNoNegativo(peso,False,"Ingrese un peso mayor que cero",PesoInvalido)
+        elif (peso is not None):
+            raise TipoGrafoIncompatible("Esta operacion no se puede hacer porque el grafo no está pesado")
+
+    #ESTATICOS
+    @staticmethod
+    def validarGrafo(grafo:Grafo):
+        validarTipoObjeto(Grafo, grafo, "Ingrese un grafo")
+
+    @staticmethod
+    def validarOperacionDeGrafo(grafo1:Grafo, grafo2:Grafo):
+        Grafo.validarGrafo(grafo1)
+        Grafo.validarGrafo(grafo2)
+
+        validarCondicion(grafo1.getTipoVertice() is not grafo2.getTipoVertice(), 
+                         "Ingresa dos grafos con el mismo tipo de vertices")
+        validarCondicion(grafo1.getTipoArista()  is not grafo2.getTipoArista(), 
+                         "Ingresa dos grafos con el mismo tipo de aristas")
+
+    @staticmethod
+    def union(grafo1:Grafo[V,E],grafo2:Grafo[V,E]) -> Grafo[V,E]:
+        pass
+
         
-    def __validarTipoE(self, dato:E):
-        self.__tipoArista.__validarEntrada__(dato,True)
+    @staticmethod
+    def ensamblarGrafos(grafo1:Grafo[V,E],grafo2:Grafo[V,E]) -> Grafo[V,E]:
+        pass
+
+
 
     #GETTERS
-    
+
     #Calculables
+    def getCantidadVertices(self) -> int:
+        return len(self.__vertices)
+
+    def getCantidadAristas(self) -> int:
+        vertices = 0
+
+        for vertice in self.__vertices:
+            vertices += self.getGradoVertice(vertice)
+
+        return vertices // 2
+
+    def getCantidadCaras(self) -> int:
+        if self.esPlanar():
+            return 2 + self.getCantidadAristas() - self.getCantidadCaras()
+        else: return 0
+
+    def getGradoVertice(self, vertice:V) -> int:
+        self.__validarVertice(vertice)
+        indice = self.__indiceVertice(vertice)
+        grado = 0
+
+        for adyacencia in self.__adyacencia[indice]:    
+            grado += adyacencia
+        
+        return grado
 
     #Atributos
+    def getVertices(self) -> set:
+        vertices = set({})
+        for vertice in self.__vertices:
+            vertices.add(vertice)
+
+        return vertices
+    
     def getTipoVertice(self) -> type:
-        return self.__tipoVertice.getType()
-    
+        return self.__tipoV.getType()
     def getTipoArista(self) -> type:
-        if self.__tipoArista is not None:
-            return self.__tipoArista.getType()
-        return None
-    
+        return self.__tipoE.getType()
+
+
     #SETTERS
-    def setTipos(self, tipoVertice:type, tipoArista:type):
-        self.__tipoVertice = TypeStruct(tipoVertice)
-        
-        if tipoArista is not None:
-            self.__tipoArista = TypeStruct(tipoArista)
-        else:
-            self.__tipoArista = None
+
+    def __setTiposDatos(self, tipoVertices:type, tipoAristas:type = None):
+        self.__tipoV = TypeStruct(tipoVertices)
+        self.__tipoE = TypeStruct(tipoAristas)

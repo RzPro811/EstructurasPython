@@ -172,8 +172,17 @@ def validarCondicion(condicion:bool, mensaje:str, error:Exception):
     mensaje = crearMensaje(f"se ha hallado una condicion incompatible", mensaje)
     validarTipoObjeto(bool, condicion, "Ingresa una condicion booleana", FalloValidacion)
 
-    if condicion:
-        raise error(mensaje)
+    if condicion: raise error(mensaje)
+
+def validarValorCompatible(valor:int, valorIncompatible:int, mensaje:str = None, error:Exception = ValueError):
+    validarError(error)
+    mensaje = crearMensaje(f"ingrese un valor distinto de {valorIncompatible}", mensaje)
+    validarTipoObjeto(int, valor , "Ingrese un numero entero por parametro", FalloValidacion)
+    validarTipoObjeto(int, valorIncompatible , "Ingrese un numero entero por parametro", FalloValidacion)
+    
+    if valor == valorIncompatible: raise error(mensaje)
+
+
 
 
 #HEREDABLE PARA ESTRUCTURA DE UN SOLO DATO ------------------------------------------------------------------
@@ -212,8 +221,11 @@ class TypeStruct:
             -   **TypeError**: si la entrada no es del tipo ingresado. Si la condicion permitirNone es false, tambien saltará eror si la entrada es None
         """
         validarTipoObjeto(bool, permitirNone,"La condicion de permitir None debe ser booleana", FalloValidacion)
-        if (entrada is not None) or (not permitirNone) or (self.getType() is None):
+        if (self.getType() is None):
+            validarCondicion(entrada is not None, "Ingresa un tipo None",TypeError)
+        elif (entrada is not None) or (not permitirNone):
             validarTipoObjeto(self.getType(), entrada, "Ingresa un tipo "+self.getTypeName()) 
+
 
     def __validarEntradas__(self, *entradas:T, permitirNone = False):
         """Dado varias entradas, valida que cada una sea del tipo ingresado, sino no lo es, lanza TypeError

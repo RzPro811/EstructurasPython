@@ -22,3 +22,8 @@ class PesoInvalido(RuntimeError):
     def __init__(self, *args):
         """Usar si se ingresa un valor de Peso invalido"""
         super().__init__(*args)
+
+class OperacionGrafosInvalida(RuntimeError):
+    def __init__(self, *args):
+        """Usar si se realizará una operacion entre grafos invalida"""
+        super().__init__(*args)

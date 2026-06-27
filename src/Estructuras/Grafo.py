@@ -1,4 +1,4 @@
-from .Validaciones import TypeStruct, TypeVar, Generic, validarValorCompatible, validarCondicion, validarRango, validarTipoObjeto, validarNoNegativo, Enum
+from .Validaciones import TypeStruct, DataStruct, TypeVar, Generic, validarValorCompatible, validarCondicion, validarRango, validarTipoObjeto, validarNoNegativo, Enum
 from .Excepciones.Grafo import *
 from typing import Generator
 
@@ -7,8 +7,12 @@ E = TypeVar("E")
 
 SIN_ADYACENCIA = 0
 ADYAENCIA = 1
+ANTIADYACENCIA = -1 
 
+class Cursor(DataStruct, Generic[V]):
+    pass
 
+#Grafo ------------------------------------------------------------------------------------------------------------
 class Grafo(Generic[V,E]):
     #CONSTANTES
     
@@ -64,17 +68,33 @@ class Grafo(Generic[V,E]):
         """
         return self.__pesado
 
-    def esPlanar(self):
+    def esPlanar(self) -> bool:
+        """Verifica que un grafo sea planar. Es decir, que se pueda graficar sin que se crucen ninguna aristas
+        
+        **return**
+            -   (bool) Verdadero si cumple que la cantidad de aristas es mayor a 3 * (cantidad de vertices - 2),
+            (si es el caso, el grafo es planar). Falso si no
+        """
         return self.getCantidadAristas() <= 3*(self.getCantidadVertices()-2) 
     
-    def esEuleriano(self):
+    def esEuleriano(self) -> bool:
+        """Verifica que el grafo sea euleriano. Es decir, que el grado de todos los vertices sea par.
+        
+        **return**
+            -   (bool) Verdadero si todos los vertices tienen grado par, falso si al menos uno es impar
+        """
         for vertice in self:
             if self.getGradoVertice(vertice) % 2 == 1:
                 return False
             
         return True
     
-    def esSemiEuleriano(self):
+    def esSemiEuleriano(self) -> bool:
+        """Verifica que el grafo sea semieuleriano. Es decir, que solo haya dos vertices de grafo impar
+        
+        **return**
+            -   (bool) Verdadero si solo dos vertices tienen grado impar, falso si no
+        """
         verticesImpares = 0
 
         for vertice in self:
@@ -123,7 +143,15 @@ class Grafo(Generic[V,E]):
             self.__actualizarMatriz(self.__pesos)
 
     def eliminarVertice(self, vertice:V):
-        """Dado un vertice del grafo, lo elimina"""
+        """Dado un vertice del grafo, lo elimina
+        
+        **parameters**
+            -   vertice (V): Tiene que estar en el grafo
+
+        **excepciones**
+            -   **TypeError** si la entrada no es un objeto del tipo ingresado V+
+            -   **VerticeNoEncontradoError** si el vertice no es parte del grafo
+        """
         self.__validarVertice(vertice)
         indice = self.__indiceVertice(vertice)
         
@@ -171,9 +199,9 @@ class Grafo(Generic[V,E]):
             -   **AdyacenciaError**: Si los datos no estan conectados
         """
         self.__validarDesconexion(vertice1, vertice2)
-        self.__conectarVertices(vertice1, vertice2, SIN_ADYACENCIA, SIN_ADYACENCIA)
-        if not self.estaConectado(vertice1, vertice2):
-            self.__conectarVertices(vertice2, vertice1, SIN_ADYACENCIA, SIN_ADYACENCIA)
+
+        self.__conectarVertices(vertice1, vertice2, SIN_ADYACENCIA, None, SIN_ADYACENCIA)
+        self.__conectarVertices(vertice2, vertice1, SIN_ADYACENCIA, None, SIN_ADYACENCIA)
 
 
     #METODOS INTERNOS
@@ -217,6 +245,17 @@ class Grafo(Generic[V,E]):
         if self.esPesado():
             self.__pesos[i][j] = peso
 
+    
+    def __cargarConexion(self, grafoDonante:Grafo[V,E]):
+        for vertice in grafoDonante:
+            self.agregarVertice(vertice)
+
+        for vertice1 in grafoDonante:
+            for vertice2 in grafoDonante:
+                if grafoDonante.estaConectado(vertice1,vertice2) and not self.estaConectado(vertice1, vertice2):
+                    self.conectarVertices(vertice1, vertice2)
+
+
     #VALIDACIONES
     def __validarConexion(self, vertice1:V, vertice2:V, coneccion:E, peso:int):
         self.__validarVertice(vertice1)
@@ -253,27 +292,56 @@ class Grafo(Generic[V,E]):
     #ESTATICOS
     @staticmethod
     def validarGrafo(grafo:Grafo):
+        """Dado un grafo, valida que sea un grafo
+        
+        **parameters**
+            -   grafo (Grafo)
+
+        **excepciones**
+            -   **TypeError** si el parametro ingresado no es un Grafo
+        """
         validarTipoObjeto(Grafo, grafo, "Ingrese un grafo")
 
     @staticmethod
     def validarOperacionDeGrafo(grafo1:Grafo, grafo2:Grafo):
+        """Dado dos grafos, valida que sean compatibles para realizar las respectivas operaciones
+        
+        **parameters**
+            -   grafo1 (Grafo[V,E])
+            -   grafo2 (Grafo[V,E])
+
+        **excepciones**
+            -   **TypeError** si al menos un parametro no es un grafo
+            -   **OperacionGrafosInvalida** si los tipos de los vertices y las aristas de ambos grafos no son los mismos
+        """
+
         Grafo.validarGrafo(grafo1)
         Grafo.validarGrafo(grafo2)
 
         validarCondicion(grafo1.getTipoVertice() is not grafo2.getTipoVertice(), 
-                         "Ingresa dos grafos con el mismo tipo de vertices")
+                         "Ingresa dos grafos con el mismo tipo de vertices", OperacionGrafosInvalida)
         validarCondicion(grafo1.getTipoArista()  is not grafo2.getTipoArista(), 
-                         "Ingresa dos grafos con el mismo tipo de aristas")
+                         "Ingresa dos grafos con el mismo tipo de aristas", OperacionGrafosInvalida)
 
+    
     @staticmethod
     def union(grafo1:Grafo[V,E],grafo2:Grafo[V,E]) -> Grafo[V,E]:
-        pass
+        Grafo.validarOperacionDeGrafo(grafo1, grafo2)
 
+        grafo = Grafo(grafo1.getTipoVertice(),grafo1.getTipoArista())
+        grafo.__cargarConexion(grafo1)
+        grafo.__cargarConexion(grafo2)
+        
+        return grafo
         
     @staticmethod
-    def ensamblarGrafos(grafo1:Grafo[V,E],grafo2:Grafo[V,E]) -> Grafo[V,E]:
-        pass
-
+    def ensamblar(grafo1:Grafo[V,E],grafo2:Grafo[V,E]) -> Grafo[V,E]:
+        grafo = Grafo.union(grafo1, grafo2)
+    
+        for vertice1 in grafo1:
+            for vertice2 in grafo2:
+                if not grafo.estaConectado(vertice1, vertice2):
+                    grafo.conectarVertices(vertice1, vertice2)
 
 
     #GETTERS
@@ -324,3 +392,18 @@ class Grafo(Generic[V,E]):
     def __setTiposDatos(self, tipoVertices:type, tipoAristas:type = None):
         self.__tipoV = TypeStruct(tipoVertices)
         self.__tipoE = TypeStruct(tipoAristas)
+
+
+#Digrafo ------------------------------------------------------------------------------------------------------
+class Digrafo(Grafo,Generic[E,V]):
+    #CONSTRUCTOR
+    def __init__(self, tipoVertices, tipoAristas = None, pesado = False):
+        super().__init__(tipoVertices, tipoAristas, pesado)
+        
+    #METODOS DE CLASE
+
+    def conectarVertices(self, vertice1, vertice2, coneccion = None, peso = None):
+        self.__conectarVertices(vertice1, vertice2, ADYAENCIA, coneccion, peso)
+
+    def desconectarVertices(self, vertice1, vertice2):
+        self.__conectarVertices(vertice1, vertice2, SIN_ADYACENCIA, None, SIN_ADYACENCIA)

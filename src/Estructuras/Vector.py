@@ -397,6 +397,20 @@ class Matriz(Generic[T], TypeStruct):
                 elementos+=1
 
         return elementos
+    
+    def getFila(self, indice:int):
+        self.__validarIndiceColu(indice)
+        
+        return self.__array[indice]
+
+    def getColumna(self, indice:int):
+        self.__validarIndiceFila(indice)
+        vector = Vector(self.getType(),self.getLongitudColu())
+
+        for i in range(self.getLongitudColu()):
+            vector[i] = self.__array[i][indice]
+
+        return vector
 
     def getLongitudFila(self) -> int :
         return len(self.__array[PRIMERA_POSCICION])

@@ -1,5 +1,7 @@
-from .Validaciones import TypeStruct, DataStruct, TypeVar, Generic, validarValorCompatible, validarCondicion, validarRango, validarTipoObjeto, validarNoNegativo, Enum
+from .Validaciones import (TypeStruct, DataStruct, TypeVar, Generic, ValidarTipoUnico, validarValorCompatible, 
+                           validarCondicion, validarTipoObjeto, validarNoNegativo)
 from .Excepciones.Grafo import *
+from .Excepciones.Generales import VacioError
 from typing import Generator
 
 V = TypeVar("V")
@@ -203,6 +205,9 @@ class Grafo(Generic[V,E]):
         self.__conectarVertices(vertice1, vertice2, SIN_ADYACENCIA, None, SIN_ADYACENCIA)
         self.__conectarVertices(vertice2, vertice1, SIN_ADYACENCIA, None, SIN_ADYACENCIA)
 
+    def esVertice(self,vertice:V):
+        validarTipoObjeto(self.getTipoVertice(),vertice)
+        return vertice in self.getVertices()
 
     #METODOS INTERNOS
 
@@ -329,7 +334,6 @@ class Grafo(Generic[V,E]):
         validarCondicion(grafo1.getTipoArista()  is not grafo2.getTipoArista(), 
                          "Ingresa dos grafos con el mismo tipo de aristas", OperacionGrafosInvalida)
 
-    
     @staticmethod
     def union(grafo1:Grafo[V,E],grafo2:Grafo[V,E]) -> Grafo[V,E]:
         Grafo.validarOperacionDeGrafo(grafo1, grafo2)
@@ -350,6 +354,62 @@ class Grafo(Generic[V,E]):
                     grafo.conectarVertices(vertice1, vertice2)
 
         return grafo
+    
+    @staticmethod
+    def generarGrafoInconexo(vertices:set[V]) -> Grafo[V,None]:
+        validarTipoObjeto(set, vertices, "Ingresa un set de datos")
+        validarValorCompatible(len(vertices),0,"Ingrese un set no vacio", VacioError)
+        tipo = ValidarTipoUnico(vertices)
+
+        inconexo = Grafo(tipo)
+
+        for elemento in vertices:
+            inconexo.agregarVertice(elemento)
+
+        return inconexo
+    
+    @staticmethod
+    def generarGrafoPath(vertices:set[V]):
+        path = Grafo.generarGrafoInconexo(vertices)
+
+        anterior = None
+        for vertice in path:
+            if anterior is not None:
+                path.conectarVertices(vertice, anterior)
+
+            anterior = vertice
+
+        return path
+
+    @staticmethod
+    def generarGrafoCircuito(vertices:set[V]):
+        circuito = Grafo.generarGrafoInconexo(vertices)
+
+        primero = None
+        anterior = None
+        for vertice in circuito:
+            if anterior is not None:
+                circuito.conectarVertices(vertice, anterior)
+            else: primero = vertice
+
+            anterior = vertice
+
+        circuito.conectarVertices(vertice,primero)
+
+        return circuito
+
+    @staticmethod
+    def generarGrafoCompleto(vertices:set[V]):
+        completo = Grafo.generarGrafoInconexo(vertices)
+
+        for vertice1 in completo:
+            for vertice2 in completo:
+                if (vertice1 != vertice2) and not completo.estaConectado(vertice1,vertice2):
+                    completo.conectarVertices(vertice1,vertice2)
+
+        return completo
+
+
 
     #GETTERS
 

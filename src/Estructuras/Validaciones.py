@@ -85,6 +85,20 @@ def validarTipoObjeto(tipo:type, objeto:T, mensaje:str = None, error:Exception =
     if not isinstance(objeto, tipo):
         raise error(mensaje)
     
+def ValidarTipoUnico(iterable, mensaje:str = "Ingresa una lista de elementos del mismo tipo", error:Exception = TypeError):
+    crearMensaje(mensaje)
+    validarError(error)
+
+    tipo = None
+    for item in iterable:
+        if tipo is None:
+            tipo = type(item)
+        else:
+            validarTipoObjeto(tipo,item,mensaje,error)
+
+    return tipo
+
+    
 def validarNoNegativo(numero: int, incluyeCero:bool = True, mensaje:str = None, error:Exception = ValueError):
     """Valida que un numero ingresado no sea un valor negativo
     

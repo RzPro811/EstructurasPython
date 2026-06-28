@@ -207,6 +207,7 @@ class Grafo(Generic[V,E]):
     #METODOS INTERNOS
 
     def __actualizarMatriz(self, matriz:list[list[int]], dato:int|E):
+        """"""
         if self.getCantidadVertices() == 1:
             matriz.append([dato])
             
@@ -293,6 +294,7 @@ class Grafo(Generic[V,E]):
     class Cursor:
         __dato:V
 
+
     #ESTATICOS
     @staticmethod
     def validarGrafo(grafo:Grafo):
@@ -347,6 +349,7 @@ class Grafo(Generic[V,E]):
                 if not grafo.estaConectado(vertice1, vertice2):
                     grafo.conectarVertices(vertice1, vertice2)
 
+        return grafo
 
     #GETTERS
 
@@ -389,6 +392,175 @@ class Grafo(Generic[V,E]):
         return self.__tipoV.getType()
     def getTipoArista(self) -> type:
         return self.__tipoE.getType()
+
+    def visualizar(self, titulo: str = None, mostrar_pesos: bool = True, mostrar_nombres: bool = True, figsize: tuple[int, int] = (8, 6), font_size: int = 12):
+        """Muestra una visualización del grafo usando matplotlib. """
+        try:
+            import matplotlib.pyplot as plt
+        except ImportError as error:
+            raise ImportError("matplotlib no está instalado. Instale matplotlib para visualizar el grafo.") from error
+
+        try:
+            import networkx as nx
+        except ImportError:
+            nx = None
+
+        vertices = list(self.__vertices.keys())
+        if len(vertices) == 0:
+            raise ValueError("El grafo no tiene vertices para visualizar.")
+
+        dirigido = isinstance(self, Digrafo)
+        titulo = titulo or ("Digrafo" if dirigido else "Grafo")
+
+        def obtener_etiqueta_origen_destino(origen, destino):
+            origen_indice = self.__indiceVertice(origen)
+            destino_indice = self.__indiceVertice(destino)
+            etiqueta = None
+            if self.__aristas[origen_indice][destino_indice] is not None:
+                etiqueta = str(self.__aristas[origen_indice][destino_indice])
+            if self.esPesado() and mostrar_pesos:
+                peso = self.__pesos[origen_indice][destino_indice]
+                if etiqueta is None:
+                    etiqueta = str(peso)
+                else:
+                    etiqueta = f"{etiqueta} ({peso})"
+            return etiqueta
+
+        if nx is not None:
+            grafo = nx.DiGraph() if dirigido else nx.Graph()
+            grafo.add_nodes_from(vertices)
+            edge_labels = {}
+
+            for i, origen in enumerate(vertices):
+                for j, destino in enumerate(vertices):
+                    if not dirigido and j <= i:
+                        continue
+                    if self.estaConectado(origen, destino):
+                        etiqueta = obtener_etiqueta_origen_destino(origen, destino)
+                        grafo.add_edge(origen, destino)
+                        if etiqueta is not None:
+                            edge_labels[(origen, destino)] = etiqueta
+
+            pos = nx.spring_layout(grafo)
+            fig, ax = plt.subplots(figsize=figsize)
+            ax.set_title(titulo)
+            ax.axis("off")
+
+            edges = nx.draw_networkx_edges(grafo, pos, ax=ax, edge_color="gray", arrows=dirigido)
+            nodes = nx.draw_networkx_nodes(grafo, pos, ax=ax, node_color="skyblue", node_size=700)
+            labels = nx.draw_networkx_labels(grafo, pos, ax=ax, font_size=font_size) if mostrar_nombres else {}
+            edge_labels_artists = {}
+            if edge_labels:
+                edge_labels_artists = nx.draw_networkx_edge_labels(
+                    grafo,
+                    pos,
+                    edge_labels=edge_labels,
+                    ax=ax,
+                    font_color="red",
+                    font_size=max(font_size - 2, 8),
+                )
+
+            class NodoArrastrable:
+                def __init__(self, grafo, pos, nodes, labels, edges, edge_labels):
+                    self.grafo = grafo
+                    self.pos = pos
+                    self.nodes = nodes
+                    self.labels = labels
+                    self.edges = edges
+                    self.edge_labels = edge_labels
+                    self.selected = None
+
+                def _distancia(self, p1, p2):
+                    return (p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2
+
+                def presionar(self, event):
+                    if event.inaxes != ax or event.xdata is None or event.ydata is None:
+                        return
+                    click = (event.xdata, event.ydata)
+                    mejor = None
+                    mejor_dist = float("inf")
+                    for nodo, coords in self.pos.items():
+                        d = self._distancia(coords, click)
+                        if d < mejor_dist:
+                            mejor_dist = d
+                            mejor = nodo
+                    if mejor is not None and mejor_dist < 0.02:
+                        self.selected = mejor
+
+                def mover(self, event):
+                    if self.selected is None or event.inaxes != ax or event.xdata is None or event.ydata is None:
+                        return
+                    self.pos[self.selected] = (event.xdata, event.ydata)
+                    offsets = [self.pos[nodo] for nodo in self.grafo.nodes()]
+                    self.nodes.set_offsets(offsets)
+                    if mostrar_nombres:
+                        for nodo, texto in self.labels.items():
+                            x, y = self.pos[nodo]
+                            texto.set_position((x, y))
+                    if isinstance(self.edges, (list, tuple)):
+                        for idx, arco in enumerate(self.edges):
+                            if hasattr(arco, "set_positions"):
+                                u, v = list(self.grafo.edges())[idx]
+                                arco.set_positions(self.pos[u], self.pos[v])
+                    else:
+                        segmentos = []
+                        for u, v in self.grafo.edges():
+                            x1, y1 = self.pos[u]
+                            x2, y2 = self.pos[v]
+                            segmentos.append([(x1, y1), (x2, y2)])
+                        self.edges.set_segments(segmentos)
+                    for (u, v), texto in self.edge_labels.items():
+                        xm, ym = ((self.pos[u][0] + self.pos[v][0]) / 2, (self.pos[u][1] + self.pos[v][1]) / 2)
+                        texto.set_position((xm, ym))
+                    fig.canvas.draw_idle()
+
+                def soltar(self, event):
+                    self.selected = None
+
+            drag = NodoArrastrable(grafo, pos, nodes, labels, edges, edge_labels_artists)
+            fig.canvas.mpl_connect("button_press_event", drag.presionar)
+            fig.canvas.mpl_connect("motion_notify_event", drag.mover)
+            fig.canvas.mpl_connect("button_release_event", drag.soltar)
+
+            plt.subplots_adjust(left=0.05, right=0.95, top=0.95, bottom=0.05)
+            plt.show()
+            return
+
+        import math
+        from matplotlib import patches
+
+        posiciones = {}
+        angulo = 2 * math.pi / len(vertices)
+        for i, vertice in enumerate(vertices):
+            posiciones[vertice] = (math.cos(i * angulo), math.sin(i * angulo))
+
+        plt.figure(figsize=figsize)
+        for vertice, (x, y) in posiciones.items():
+            plt.scatter([x], [y], s=500, color="skyblue", zorder=2)
+            if mostrar_nombres:
+                plt.text(x, y, str(vertice), ha="center", va="center", fontsize=font_size, zorder=3)
+
+        for i, origen in enumerate(vertices):
+            for j, destino in enumerate(vertices):
+                if not dirigido and j <= i:
+                    continue
+                if self.estaConectado(origen, destino):
+                    x1, y1 = posiciones[origen]
+                    x2, y2 = posiciones[destino]
+                    etiqueta = obtener_etiqueta_origen_destino(origen, destino)
+                    if dirigido:
+                        flecha = patches.FancyArrowPatch((x1, y1), (x2, y2), arrowstyle="-|>", mutation_scale=20, color="gray", linewidth=1.5, shrinkA=15, shrinkB=15)
+                        plt.gca().add_patch(flecha)
+                    else:
+                        plt.plot([x1, x2], [y1, y2], color="gray", linewidth=1.5, zorder=1)
+                    if etiqueta is not None:
+                        xm, ym = (x1 + x2) / 2, (y1 + y2) / 2
+                        plt.text(xm, ym, etiqueta, color="red", fontsize=max(font_size - 2, 8), ha="center", va="center", zorder=4)
+
+        plt.title(titulo)
+        plt.axis("off")
+        plt.subplots_adjust(left=0.05, right=0.95, top=0.95, bottom=0.05)
+        plt.show()
 
 
     #SETTERS

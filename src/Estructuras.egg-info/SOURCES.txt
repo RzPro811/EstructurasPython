@@ -1,5 +1,6 @@
 pyproject.toml
 src/Estructuras/Grafo.py
+src/Estructuras/NoLineales.py
 src/Estructuras/Ordenador.py
 src/Estructuras/Validaciones.py
 src/Estructuras/Vector.py

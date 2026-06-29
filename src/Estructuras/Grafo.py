@@ -184,8 +184,8 @@ class Grafo(Generic[V,E]):
         """
 
         self.__validarConexion(vertice1,vertice2,coneccion,peso)
-        self.__conectarVertices(vertice1,vertice2,ADYAENCIA,coneccion,peso)
-        self.__conectarVertices(vertice2,vertice1,ADYAENCIA,coneccion,peso)
+        self.__conectarVertices__(vertice1,vertice2,ADYAENCIA,coneccion,peso)
+        self.__conectarVertices__(vertice2,vertice1,ADYAENCIA,coneccion,peso)
         
 
     def desconectarVertices(self, vertice1:V, vertice2:V):
@@ -202,8 +202,8 @@ class Grafo(Generic[V,E]):
         """
         self.__validarDesconexion(vertice1, vertice2)
 
-        self.__conectarVertices(vertice1, vertice2, SIN_ADYACENCIA, None, SIN_ADYACENCIA)
-        self.__conectarVertices(vertice2, vertice1, SIN_ADYACENCIA, None, SIN_ADYACENCIA)
+        self.__conectarVertices__(vertice1, vertice2, SIN_ADYACENCIA, None, SIN_ADYACENCIA)
+        self.__conectarVertices__(vertice2, vertice1, SIN_ADYACENCIA, None, SIN_ADYACENCIA)
 
     def esVertice(self,vertice:V):
         validarTipoObjeto(self.getTipoVertice(),vertice)
@@ -264,7 +264,7 @@ class Grafo(Generic[V,E]):
         self.__validarVertice(vertice)
         return self.__vertices[vertice]
 
-    def __conectarVertices(self, vertice1:V, vertice2:V, tipoAdyacencia:int, coneccion:E, peso:int):
+    def __conectarVertices__(self, vertice1:V, vertice2:V, tipoAdyacencia:int, coneccion:E, peso:int):
         """Dado dos vertices, un tipo de ayacencia, un dato de arista, y un peso, conecta los dos vertices ingresados
         ingresando el tipo de Adyacencia en la matriz de adyacencia, la coneccion en la matriz de aristas,
         y el peso en la matriz de pesos
@@ -711,6 +711,8 @@ class Grafo(Generic[V,E]):
             return etiqueta
 
         if nx is not None:
+            from matplotlib import patches
+
             grafo = nx.DiGraph() if dirigido else nx.Graph()
             grafo.add_nodes_from(vertices)
             edge_labels = {}
@@ -730,9 +732,27 @@ class Grafo(Generic[V,E]):
             ax.set_title(titulo)
             ax.axis("off")
 
-            edges = nx.draw_networkx_edges(grafo, pos, ax=ax, edge_color="gray", arrows=dirigido)
             nodes = nx.draw_networkx_nodes(grafo, pos, ax=ax, node_color="skyblue", node_size=700)
             labels = nx.draw_networkx_labels(grafo, pos, ax=ax, font_size=font_size) if mostrar_nombres else {}
+
+            if dirigido:
+                edges = []
+                for u, v in grafo.edges():
+                    flecha = patches.FancyArrowPatch(
+                        pos[u],
+                        pos[v],
+                        arrowstyle="-|>",
+                        mutation_scale=20,
+                        color="gray",
+                        linewidth=1.5,
+                        shrinkA=15,
+                        shrinkB=15,
+                    )
+                    ax.add_patch(flecha)
+                    edges.append(flecha)
+            else:
+                edges = nx.draw_networkx_edges(grafo, pos, ax=ax, edge_color="gray")
+
             edge_labels_artists = {}
             if edge_labels:
                 edge_labels_artists = nx.draw_networkx_edge_labels(
@@ -864,7 +884,7 @@ class Grafo(Generic[V,E]):
 
 
 #Digrafo ------------------------------------------------------------------------------------------------------
-class Digrafo(Grafo,Generic[E,V]):
+class Digrafo(Grafo,Generic[V,E]):
     #CONSTRUCTOR
     def __init__(self, tipoVertices, tipoAristas = None, pesado = False):
         super().__init__(tipoVertices, tipoAristas, pesado)
@@ -872,7 +892,19 @@ class Digrafo(Grafo,Generic[E,V]):
     #METODOS DE CLASE
 
     def conectarVertices(self, vertice1, vertice2, coneccion = None, peso = None):
-        self.__conectarVertices(vertice1, vertice2, ADYAENCIA, coneccion, peso)
+        super().__conectarVertices__(vertice1, vertice2, ADYAENCIA, coneccion, peso)
 
     def desconectarVertices(self, vertice1, vertice2):
-        self.__conectarVertices(vertice1, vertice2, SIN_ADYACENCIA, None, SIN_ADYACENCIA)
+        super().__conectarVertices__(vertice1, vertice2, SIN_ADYACENCIA, None, SIN_ADYACENCIA)
+
+    #GETTERS
+    
+    def getGrafoSuyacente(self) -> Grafo[V,E]:
+        grafo = Grafo.generarGrafoInconexo(self.getVertices()) 
+
+        for vertice1 in self.getVertices():
+            for vertice2 in self.getVertices():
+                if self.estaConectado(vertice1, vertice2):
+                    grafo.conectarVertices(vertice1, vertice2)
+
+        return grafo

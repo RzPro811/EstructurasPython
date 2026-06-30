@@ -1,4 +1,4 @@
-from .Validaciones import T, Generic, TypeStruct, validarTipoObjeto, validarRango, validarNoNegativo, validarCondicion
+from .Validaciones import T, Generic, TypeStruct, validarTipoObjeto, validarRango, validarNoNegativo, validarCondicion, validarMayorQue
 from .Excepciones.Generales import *
 from typing import Generator
 from random import shuffle
@@ -186,6 +186,28 @@ class Vector(Generic[T], TypeStruct):
         """Vacia el vector"""
         self.__array = self.__generarVector(self.__getLongitudOriginal())
     
+    def copiarContendio(self, vector:Vector[T]):
+        """Dado un vector vacio, copia el contenido de este vector al otro vector
+        
+        **parameters**
+            -   vector (Vector[T]): Vacio, mismo tipo de dato que este vector y longitud mayor o igual a la de este vector
+        
+        **excepciones**
+            -   **TypeError** si lo ingresado no es un vector o el tipo de dato del contenido es distinto
+            -   **VacioError** si el vector ingresado no está vacio
+            -   **ImplosionError** si el vector ingresado mide menos de lo que mide este vector
+        """
+        validarTipoObjeto(Vector, vector, "Ingresa un vector")
+        validarCondicion(vector.getType() is not self.getType(), 
+                         "Ingresa un vector con el mismo tipo de dato", TypeError)
+        validarCondicion(not vector.estaVacio(), "Ingresa un vector vacio", VacioError)
+        validarMayorQue(vector.getLongitud(), self.getLongitud(), True, 
+                        "Ingrese un vector con la misma longitud o mayor que este vector", ImplosionError)
+        
+        for i in range(self.getLongitud()):
+            vector[i] = self[i]
+
+
 
     #METODOS INTERNOS
     def __generarVector(self, longitud:int) -> list[T]:
@@ -241,10 +263,12 @@ class Vector(Generic[T], TypeStruct):
     #GETTERS
 
     #Atributos Calculables
-    def getLongitud(self) -> int:
-        return len(self)
-
     def getCantidadElementos(self) -> int:
+        """Obtiene la cantidad de elementos en este vector
+        
+        **return**
+            -   (int) cantidad de posciciones en el vector que no contienen un None
+        """
         elementos = 0
 
         for item in self:
@@ -254,16 +278,42 @@ class Vector(Generic[T], TypeStruct):
         return elementos
 
     def __getPoscicionFinal(self) -> int:
+        """Obtiene el indice de la ultima poscicion
+        
+        **return**
+            -   (int) longitud - 1
+        """
         return self.getLongitud() - 1
 
 
     #Atributos reales
     def __getLongitudOriginal(self) -> int:
+        """Obtiene la longitud original del vector antes de expandirse
+        
+        **return**
+            -   (int) longitud ingresada por parametro
+        """
         return self.__longitudOriginal
     
+    def getLongitud(self) -> int:
+        """Obtiene la longitud del vector
+        
+        **return**
+            -   (int) longitud del vector
+        """
+
+        return len(self)
 
     #SETTERS
     def __setLongitudOriginal(self, longitud:int):
+        """Setea la longtitud del vector al momento de crearlo
+        
+        **parameters**
+            -   longitud (int): mayor que cero
+
+        **excepciones**
+            -   **LongitudNegativaError** si la longitud ingresada es menor o igual a cero
+        """
         validarNoNegativo(longitud,False, "Ingrese una longitud positiva", LongitudNegativaError)
         self.__longitudOriginal = longitud
         
@@ -486,7 +536,6 @@ class Matriz(Generic[T], TypeStruct):
 
         return elemento
 
-
     def copiar(self) -> Matriz[T]:
         matriz = Matriz(self.getType(),self.getLongitudColu(), self.getLongitudFila())
         
@@ -495,10 +544,80 @@ class Matriz(Generic[T], TypeStruct):
 
         return matriz
 
-    def expandir(self, datoInicial:T = None, cantidad:int = 1):
-        self.__validarEntrada__(datoInicial)
-        validarNoNegativo(cantidad,False, "Ingresa una cantidad positiva para la expancion", LongitudNegativaError)
+    def expandirFilas(self, cantidad:int = 1, datoInicial:T = None):
+        self.__validarExpansion(cantidad, datoInicial)
 
+        longitudFilaNueva = self.getLongitudFila() + cantidad
+
+        for i in range(self.getLongitudColu()):
+            expansion = self.__generarFila(datoInicial,longitudFilaNueva)
+            self.__array[i].copiarContendio(expansion)
+            self.__array[i] = expansion
+
+    def expandirColumnas(self, cantidad:int = 1, datoInicial:T = None):
+        self.__validarExpansion(cantidad, datoInicial)
+
+        longitudColumnaNueva = self.getLongitudColu() + cantidad
+        expansion = Vector(Vector,longitudColumnaNueva)
+        
+        for i in range(longitudColumnaNueva):
+            if i < self.getLongitudColu():
+                expansion[i] = self.__array[i]
+            else:
+                expansion[i] = self.__generarFila(datoInicial,self.getLongitudFila())
+
+        self.__array = expansion
+
+    def expandirMatriz(self, expansionFila:int = 1, expansionColu:int = 1, datoInicial:T = None):
+        self.expandirColumnas(expansionColu, datoInicial)
+        self.expandirFilas(expansionFila, datoInicial)
+
+    def eliminarFila(self, indice:int) -> Vector[T]:
+        filaEliminada = self.getFila(indice)
+        contraccion = Vector(Vector, self.getLongitudColu() - 1)
+
+        for i in range(contraccion.getLongitud()):
+            
+            if i < indice:
+                contraccion[i] = self.getFila(i)
+            else:
+                contraccion[i] = self.getFila(i+1)
+
+        self.__array = contraccion
+
+        return filaEliminada
+
+    def eliminarColumna(self, indice:int) -> Vector[T]:
+        columnaEliminada = self.getColumna(indice)
+        contraccion = self.getLongitudFila() - 1
+
+        for i in range(self.getLongitudColu()):
+            filaNueva = self.__generarFila(None, contraccion)
+            for j in range(filaNueva.getLongitud()):
+                if j < indice:
+                    filaNueva[j] = self.__array[i][j]
+                else:
+                    filaNueva[j] = self.__array[i][j+1]
+
+            self.__array[i] = filaNueva
+
+        return columnaEliminada
+
+    def contraerMatriz(self, indice:int, jndice:int):
+        self.eliminarColumna(indice)
+        self.eliminarFila(jndice)
+
+    #METODOS INTERNOS
+
+    def __generarFila(self, datoinicial:T, longitud:int) -> Vector[T]: 
+        expansion = Vector(self.getType(),longitud)
+        
+        if datoinicial is not None:
+            for i in range(longitud):
+                expansion[i] = datoinicial
+
+        return expansion
+    
 
     #VALIDACIONES
     def __validarIndiceFila(self, indice:int):
@@ -524,6 +643,10 @@ class Matriz(Generic[T], TypeStruct):
         self.__validarIndiceFila(indice)
         validarCondicion(self.columnaLlena(indice),f"La fila {indice} está llena", LlenoError)
         
+    def __validarExpansion(self, cantidad:int, datoInicial:T):        
+        validarTipoObjeto(int, cantidad, "Ingresa una cantidad int")
+        validarNoNegativo(cantidad,False, "Ingresa una cantidad positiva para la expancion", ImplosionError)
+        self.__validarEntrada__(datoInicial,True)
 
     #GETTERS
     def getCantidadElementos(self) -> int:

@@ -887,6 +887,16 @@ class Grafo(Generic[V,E]):
 class Digrafo(Grafo,Generic[V,E]):
     #CONSTRUCTOR
     def __init__(self, tipoVertices, tipoAristas = None, pesado = False):
+        """Construye un digrafo dado un tipo de vertices
+        
+        **parameters**
+            -   tipoVertices (type)
+            -   tipoAristas (type): por default None. Setea un tipo de dato para almacenar cosas en las aristas de los grafos
+            -   pesado (bool): por default False. Si es True, el grafo será un grafo pesado.  
+
+        **excepciones**
+            -   **TypeError**: Si ninguno de los datos ingresados es del tipo correspondiente  
+        """
         super().__init__(tipoVertices, tipoAristas, pesado)
         
     #METODOS DE CLASE
@@ -900,6 +910,11 @@ class Digrafo(Grafo,Generic[V,E]):
     #GETTERS
     
     def getGrafoSuyacente(self) -> Grafo[V,E]:
+        """Retorna el grafo que sería el digrafo si no estuviera orientado
+        
+        **return**
+            -   (Grafo[V,E]) el digrafo sin direcciones
+        """
         grafo = Grafo.generarGrafoInconexo(self.getVertices()) 
 
         for vertice1 in self.getVertices():

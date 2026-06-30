@@ -17,3 +17,8 @@ class MetodoInvalidoError(RuntimeError):
     def __init__(self, *args):
         """Usar cuando un metodo es invalido"""
         super().__init__(*args)
+
+class ImplosionError(RuntimeError):
+    def __init__(self, *args):
+        """Usar para expansiones en negativo (tenes que verlo para entenderlo)"""
+        super().__init__(*args)

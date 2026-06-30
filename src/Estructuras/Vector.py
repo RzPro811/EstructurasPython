@@ -274,7 +274,18 @@ class Matriz(Generic[T], TypeStruct):
     __array:Vector[Vector[T]]
     
     #CONSTRUCTORES
-    def __init__(self, tipo, longitudColu:int, longitudFila:int):
+    def __init__(self, tipo:type, longitudColu:int, longitudFila:int):
+        """Dado dos longitudes, colu y fila, y un tipo de dato, crea una matriz con ese tipo de datos
+
+        **parameters**
+            -   tipo (type) 
+            -   longitudColu (int): mayor que cero
+            -   longitudFila (int): mayor que cero
+        
+        **excepciones**
+            -   **TypeError** si alguno de los parametros no es del tipo especificado
+            -   **LongitudNegativaError** si alguna longitud ingresada es negativa
+        """
         validarNoNegativo(longitudFila, False, "Ingrese una longitud Positiva", LongitudNegativaError)
         validarNoNegativo(longitudColu, False, "Ingrese una longitud Positiva", LongitudNegativaError)
 
@@ -302,6 +313,11 @@ class Matriz(Generic[T], TypeStruct):
 
     #METODOS DE CLASE
     def estaLleno(self) -> bool:
+        """Verifica que la matriz esté llena
+        
+        **retunr**
+            -   (bool) verdadero si no hay valores None en la matriz, falso si hay al menos un item None
+        """
         lleno = True
 
         i =self.__getUltimaPosColu()
@@ -316,8 +332,35 @@ class Matriz(Generic[T], TypeStruct):
             i-=1
 
         return lleno
+    
+    def filaLlena(self, indice:int) -> bool:
+        self.__validarIndiceColu(indice)
+        i = PRIMERA_POSCICION
+        llena = True
+
+        while llena and (i < self.getLongitudFila()):
+            llena = self.getItem(indice, i) is not None
+            i+=1
+
+        return llena
+    
+    def columnaLlena(self, indice:int) -> bool:
+        self.__validarIndiceFila(indice)
+        i = PRIMERA_POSCICION
+        llena = True
+
+        while llena and (i < self.getLongitudColu()):
+            llena = self.getItem(i, indice) is not None
+            i+=1
+
+        return llena
 
     def estaVacio(self) -> bool:
+        """Verifica que la matriz esté vacía
+        
+        **return**
+            -   (bool) Verdadero si todos los elementos son None, falso si al menos uno no lo es
+        """
         vacio = True
 
         i = PRIMERA_POSCICION
@@ -332,11 +375,45 @@ class Matriz(Generic[T], TypeStruct):
 
         return vacio
 
+    
+    def filaVacia(self, indice:int) -> bool:
+        self.__validarIndiceColu(indice)
+        i = self.__getUltimaPosFila()
+        vacia = True
+
+        while vacia and (i >= PRIMERA_POSCICION):
+            vacia = self.getItem(indice, i) is None
+            i-=1
+
+        return vacia
+    
+    def columnaVacia(self, indice:int) -> bool:
+        self.__validarIndiceFila(indice)
+        i = self.__getUltimaPosColu()
+        vacia = True
+
+        while vacia and (i >= PRIMERA_POSCICION):
+            vacia = self.getItem(i, indice) is None
+            i-=1
+
+        return vacia
+            
 
     def esCuadrada(self):
+        """Verifica que la matriz sea cuadrada
+        
+        **return**
+            -   (bool) Verdadero si las filas y las longitudes miden exactamente lo mismo, falso si no
+        """
         return self.getLongitudFila() == self.getLongitudColu()
     
     def esSimetrica(self):
+        """Verifica que la matriz sea simetrica
+        
+        **return**
+            -   (bool) verdadero si, para poscicion (i,j) en la matriz, se encuentra el mismo elemento en la poscicion (j,i)
+            falso si al menos en una poscicion (i,j) hay un elemento distinto en la poscicion (j,i)
+        """
         simetrica = self.esCuadrada()
         i = PRIMERA_POSCICION
 
@@ -349,8 +426,18 @@ class Matriz(Generic[T], TypeStruct):
 
         return simetrica
 
+
     def agregar(self, elemento:T):
+        """Agrega un elemento en la primera poscicion vacía en la matriz
+        
+        **parameters**
+            -   elemento (T): no puede ser None
+
+        **excepciones**
+            -   **TypeError**: si el elemento ingresado no es del tipo ingresado T
+        """
         self.__validarEntrada__(elemento)
+        self.__validarNoLleno(elemento)
         agregado = False
         i = PRIMERA_POSCICION
 
@@ -367,6 +454,39 @@ class Matriz(Generic[T], TypeStruct):
             
             i+=1
 
+    def agregarEnFila(self, indice:int, elemento:T):
+        self.__validarEntrada__(elemento)
+        self.__validarFilaNoLlena(indice)
+
+        i = PRIMERA_POSCICION
+        agregado = False
+        
+        while not agregado and (i <= self.__getUltimaPosFila()):
+            if self.getItem(indice,i) is None:
+                agregado = True
+                self.setItem(indice,i,elemento) 
+
+    def agregarEnColumna(self, indice:int, elemento:T):
+        self.__validarEntrada__(elemento)
+        self.__validarColumnaNoLlena(indice)
+
+        i = PRIMERA_POSCICION
+        agregado = False
+        
+        while not agregado and (i <= self.__getUltimaPosColu()):
+            if self.getItem(i,indice) is None:
+                agregado = True
+                self.setItem(i,indice,elemento) 
+
+    def remover(self, indice:int, jndice:int) -> T:
+        self.__validarIndices(indice,jndice)
+
+        elemento = self.getItem(indice,jndice)
+        self.setItem(indice,jndice, None)
+
+        return elemento
+
+
     def copiar(self) -> Matriz[T]:
         matriz = Matriz(self.getType(),self.getLongitudColu(), self.getLongitudFila())
         
@@ -374,6 +494,11 @@ class Matriz(Generic[T], TypeStruct):
             matriz.agregar(item)
 
         return matriz
+
+    def expandir(self, datoInicial:T = None, cantidad:int = 1):
+        self.__validarEntrada__(datoInicial)
+        validarNoNegativo(cantidad,False, "Ingresa una cantidad positiva para la expancion", LongitudNegativaError)
+
 
     #VALIDACIONES
     def __validarIndiceFila(self, indice:int):
@@ -388,6 +513,18 @@ class Matriz(Generic[T], TypeStruct):
         self.__validarIndiceColu(indice)
         self.__validarIndiceFila(jndice)
 
+    def __validarNoLleno(self):
+        validarCondicion(self.estaLleno(),"La matriz está llena", LlenoError)
+
+    def __validarFilaNoLlena(self,indice):
+        self.__validarIndiceColu(indice)
+        validarCondicion(self.filaLlena(indice),f"La fila {indice} está llena", LlenoError)
+        
+    def __validarColumnaNoLlena(self,indice):
+        self.__validarIndiceFila(indice)
+        validarCondicion(self.columnaLlena(indice),f"La fila {indice} está llena", LlenoError)
+        
+
     #GETTERS
     def getCantidadElementos(self) -> int:
         elementos = 0
@@ -397,6 +534,20 @@ class Matriz(Generic[T], TypeStruct):
                 elementos+=1
 
         return elementos
+    
+    def getFila(self, indice:int):
+        self.__validarIndiceColu(indice)
+        
+        return self.__array[indice]
+
+    def getColumna(self, indice:int):
+        self.__validarIndiceFila(indice)
+        vector = Vector(self.getType(),self.getLongitudColu())
+
+        for i in range(self.getLongitudColu()):
+            vector[i] = self.__array[i][indice]
+
+        return vector
 
     def getLongitudFila(self) -> int :
         return len(self.__array[PRIMERA_POSCICION])

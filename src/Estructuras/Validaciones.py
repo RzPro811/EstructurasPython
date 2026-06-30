@@ -216,6 +216,13 @@ def validarValorCompatible(valor:int, valorIncompatible:int, mensaje:str = None,
     
     if valor == valorIncompatible: raise error(mensaje)
 
+def validarValorObligatorio(valor:int, valorObligatorio:int, mensaje:str = None, error:Exception = ValueError):
+    validarError(error)
+    mensaje = crearMensaje(f"ingrese un valor distinto de {valorObligatorio}", mensaje)
+    validarTipoObjeto(int, valor , "Ingrese un numero entero por parametro", FalloValidacion)
+    validarTipoObjeto(int, valorObligatorio , "Ingrese un numero entero por parametro", FalloValidacion)
+    
+    if valor != valorObligatorio: raise error(mensaje)
 
 
 

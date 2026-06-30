@@ -32,7 +32,7 @@ class Cola(Generic[T], TypeStruct):
 
     #METODOS DE CLASE
     def estaVacia(self):
-        return len(self) != 0
+        return len(self) == 0
 
     def agregar(self, elemento:T):
         self.__validarEntrada__(elemento)
@@ -78,19 +78,19 @@ class Pila(Generic[T], TypeStruct):
 
     #METODOS DE CLASE
     def estaVacia(self):
-        return len(self) != 0
+        return len(self) == 0
 
     def agregar(self, elemento:T):
         self.__validarEntrada__(elemento)
         self.__pila.append(elemento)
 
     def quitar(self) -> T:
-        self.__validarColaVacia()
+        self.__validarPilaVacia()
         return self.__pila.pop()
     
     #VALIDACIONES
-    def __validarColaVacia(self):
-        validarCondicion(self.estaVacia(), "La cola está vacía", VacioError)
+    def __validarPilaVacia(self):
+        validarCondicion(self.estaVacia(), "La pila está vacía", VacioError)
 
     #GETTERS
     def getLongitud(self):

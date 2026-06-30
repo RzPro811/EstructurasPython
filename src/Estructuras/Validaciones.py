@@ -188,6 +188,26 @@ def validarCondicion(condicion:bool, mensaje:str, error:Exception):
 
     if condicion: raise error(mensaje)
 
+def validarMayorQue(valor:int, minimo:int, incluirExtremo:bool = True, mensaje = None, error:Exception = ValueError):
+    validarError(error)
+    mensaje = crearMensaje(f"ingrese un valor mayor que {minimo}", mensaje)
+    validarTipoObjeto(int, valor , "Ingrese un numero entero por parametro", FalloValidacion)
+    validarTipoObjeto(int, minimo , "Ingrese un numero entero por parametro", FalloValidacion)
+    validarTipoObjeto(bool, incluirExtremo, "Ingresa una condicion booleana", FalloValidacion)
+
+    if (valor <= minimo) and ((valor != minimo) or not incluirExtremo):
+        raise error(mensaje)
+   
+def validarMenorQue(valor:int, maximo:int, incluirExtremo:bool = True, mensaje = None, error:Exception = ValueError):
+    validarError(error)
+    mensaje = crearMensaje(f"ingrese un valor menor que {maximo}", mensaje)
+    validarTipoObjeto(int, valor , "Ingrese un numero entero por parametro", FalloValidacion)
+    validarTipoObjeto(int, maximo, "Ingrese un numero entero por parametro", FalloValidacion)
+    validarTipoObjeto(bool, incluirExtremo, "Ingresa una condicion booleana", FalloValidacion)
+
+    if (valor >= maximo) and ((valor != maximo) or not incluirExtremo):
+        raise error(mensaje)
+
 def validarValorCompatible(valor:int, valorIncompatible:int, mensaje:str = None, error:Exception = ValueError):
     validarError(error)
     mensaje = crearMensaje(f"ingrese un valor distinto de {valorIncompatible}", mensaje)

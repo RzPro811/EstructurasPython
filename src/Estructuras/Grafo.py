@@ -2,7 +2,10 @@ from .Validaciones import (TypeStruct, DataStruct, TypeVar, Generic, ValidarTipo
                            validarCondicion, validarTipoObjeto, validarNoNegativo)
 from .Excepciones.Grafo import *
 from .Excepciones.Generales import VacioError
-from typing import Generator
+from .Algebra import Matriz, MatrizAlgebraica, PRIMERA_POSCICION
+from typing import Generator, Dict, Tuple, Optional
+import matplotlib.pyplot as plt
+import networkx as nx
 
 V = TypeVar("V")
 E = TypeVar("E")
@@ -20,19 +23,17 @@ class Grafo(Generic[V,E]):
     
     #listas de elementos
     __vertices:dict[V,int]
-    __aristas:list[list[E]]
+    __aristas:Matriz[E]
     
     #configuracion del grafo
-    __adyacencia:list[list[int]]
-    __pesos:list[list[int]]
-    __pesado:bool
+    __adyacencia:Matriz[int]
 
     #tipos de datos
     __tipoV:TypeStruct 
     __tipoE:TypeStruct
 
     #CONSTRUCTOR
-    def __init__(self, tipoVertices:type, tipoAristas:type = None, pesado:bool = False):
+    def __init__(self, tipoVertices:type, tipoAristas:type = None):
         """Construye un grafo dado un tipo de vertices
         
         **parameters**
@@ -44,16 +45,9 @@ class Grafo(Generic[V,E]):
             -   **TypeError**: Si ninguno de los datos ingresados es del tipo correspondiente  
         """
         self.__setTiposDatos(tipoVertices, tipoAristas)
-        validarTipoObjeto(bool,pesado, "Ingresa verdadero para pesar el grafo o falso para no setearlo")
-
+        
         self.__vertices = {}
-        self.__aristas = []
-        self.__adyacencia = []
-
-        self.__pesado = pesado
-
-        if (self.esPesado()):
-            self.__pesos = []
+        
 
     #METODOS GENERALES 
     def __iter__(self) -> Generator[V]:
@@ -66,9 +60,10 @@ class Grafo(Generic[V,E]):
         """Verifica que el grafo esté pesado
         
         **return**
-            -   (bool) Verdadero si el grafo es pesado, falso si no
+            -   (bool) Verdadero si el tipo de vertice no es None, falso si si
         """
-        return self.__pesado
+        return self.getTipoArista() is not None
+
 
     def esPlanar(self) -> bool:
         """Verifica que un grafo sea planar. Es decir, que se pueda graficar sin que se crucen ninguna aristas
@@ -124,7 +119,7 @@ class Grafo(Generic[V,E]):
         """
         self.__validarVertice(vertice1)
         self.__validarVertice(vertice2)
-        return self.__adyacencia[self.__indiceVertice(vertice1)][self.__indiceVertice(vertice2)] == ADYAENCIA
+        return self.__adyacencia.getItem(self.__indiceVertice(vertice1),self.__indiceVertice(vertice2)) == ADYAENCIA
 
     def agregarVertice(self, vertice:V):
         """Agrega un vertice al conjunto de vertices del grafo si es que no está ya en el conjunto de vertices
@@ -139,10 +134,11 @@ class Grafo(Generic[V,E]):
         self.__validarEntradaVertice(vertice)
 
         self.__vertices.update({vertice:self.getCantidadVertices()})
-        self.__actualizarMatriz(self.__adyacencia, SIN_ADYACENCIA)
-        self.__actualizarMatriz(self.__aristas, None)
-        if self.esPesado():
-            self.__actualizarMatriz(self.__pesos)
+
+        if self.getCantidadVertices() == 1:
+            self.__crearMatrices()
+        else:
+            self.__actualizarMatrices()
 
     def eliminarVertice(self, vertice:V):
         """Dado un vertice del grafo, lo elimina
@@ -155,18 +151,16 @@ class Grafo(Generic[V,E]):
             -   **VerticeNoEncontradoError** si el vertice no es parte del grafo
         """
         self.__validarVertice(vertice)
-        indice = self.__indiceVertice(vertice)
         
-        self.__desactualizarMatriz(self.__adyacencia, indice)
-        self.__desactualizarMatriz(self.__aristas, indice)
+        if self.getCantidadVertices() == 1:
+            self.__destruirMatrices()
+        else:
+            self.__desactualizarMatrices(vertice)
+        
         self.__vertices.pop(vertice)
         self.__eliminarRastro()
 
-        if self.esPesado():
-            self.__desactualizarMatriz(self.__pesos, indice)
-
-
-    def conectarVertices(self, vertice1:V, vertice2:V, coneccion:E = None, peso:int = None):
+    def conectarVertices(self, vertice1:V, vertice2:V, coneccion:E = None):
         """Dados dos vertices, los conecta. Si se ingresa un dato de arista o un peso, se ingresan como datos
         
         **parameters**
@@ -183,9 +177,9 @@ class Grafo(Generic[V,E]):
             -   **PesoInvalido**: si el peso es menor o igual a cero
         """
 
-        self.__validarConexion(vertice1,vertice2,coneccion,peso)
-        self.__conectarVertices__(vertice1,vertice2,ADYAENCIA,coneccion,peso)
-        self.__conectarVertices__(vertice2,vertice1,ADYAENCIA,coneccion,peso)
+        self.__validarConexion(vertice1,vertice2,coneccion)
+        self.__conectarVertices__(vertice1,vertice2,ADYAENCIA,coneccion)
+        self.__conectarVertices__(vertice2,vertice1,ADYAENCIA,coneccion)
         
 
     def desconectarVertices(self, vertice1:V, vertice2:V):
@@ -205,39 +199,62 @@ class Grafo(Generic[V,E]):
         self.__conectarVertices__(vertice1, vertice2, SIN_ADYACENCIA, None, SIN_ADYACENCIA)
         self.__conectarVertices__(vertice2, vertice1, SIN_ADYACENCIA, None, SIN_ADYACENCIA)
 
-    def esVertice(self,vertice:V):
+    def esVertice(self,vertice:V) -> bool:
+        """Pregunta si un elemento en la matriz es vertice del grafo
+        
+        **parameters**
+            -   vertice (V)
+
+        **return**
+            -   (bool) verdadero si este dato es vertice del grafo, falso si no
+        
+        **excepciones**
+            -   **TypeError**: si el vertice no es del tipo ingresado V
+
+        """
         validarTipoObjeto(self.getTipoVertice(),vertice)
         return vertice in self.getVertices()
 
     #METODOS INTERNOS
+    def __crearMatrices(self):
+        """Inicializa las matrices cuando sea necesario crearlas"""
+        self.__adyacencia = Matriz(int, PRIMERA_POSCICION+1, PRIMERA_POSCICION+1)
+        self.__adyacencia.setItem(PRIMERA_POSCICION, PRIMERA_POSCICION,SIN_ADYACENCIA)
 
-    def __actualizarMatriz(self, matriz:list[list[int]], dato:int|E):
-        """Dado una matriz y un dato, acualiza una de las matrices del grafo
-        añadiendo una fila y una columna
+        if self.esPesado():
+            self.__aristas = Matriz(self.getTipoArista(),PRIMERA_POSCICION+1, PRIMERA_POSCICION+1)
 
-        **parameters**
-            -   matriz (list[list[int|E]])
-            -   dato (int|E): entero o tipo de dato E                
-        """
-        if self.getCantidadVertices() == 1:
-            matriz.append([dato])
-            
-        else:
-            for listaAdyacencia in matriz:
-                listaAdyacencia.append(dato)
-            matriz.append([dato]*self.getCantidadVertices())
+    def __actualizarMatrices(self):
+        """Añadice una fila y una columna a las respectivas matrices de la matriz"""
+        self.__adyacencia.expandirMatriz(datoInicial= SIN_ADYACENCIA)
+        
 
-    def __desactualizarMatriz(self, matriz:list[list[int]], indice:int):
-        """Dado un indice, elimina la fila y la columna de la matriz del grafo ingresada en esa poscicion
+        if self.esPesado():
+            self.__aristas.expandirMatriz(datoInicial= None)
+
+    def __desactualizarMatrices(self, vectice:V):
+        """Dado un vertice, elimina su respectiva fila y columna de las matrices de la lista
         
         **parameters**
-            -   matriz (list[list[int|E]])
-            -   dato (int|E): entero o tipo de dato E            
-        """
-        for listaAdyacencia in matriz:
-            listaAdyacencia.pop(indice)
+            -   vertice (V): pertenece al grafo
 
-        matriz.pop(indice)
+        **excepciones**
+            -   **TypeError**: si el vertice no es del tipo ingresado V
+            -   **VerticeNoEncontradoError**: si el vertice no pertenece al grafo
+        """
+        indice = self.__indiceVertice(vectice)
+
+        self.__adyacencia.contraerMatriz(indice, indice)
+
+        if self.esPesado():
+            self.__aristas.contraerMatriz(indice, indice)
+    
+    def __destruirMatrices(self):
+        """Elimina las matrices del grafo"""
+        self.__adyacencia = None
+
+        if self.esPesado():
+            self.__aristas = None
         
     def __eliminarRastro(self):
         """Si un vertice es eliminado, este metodo se encarga de corregir los indices de cada vertice"""
@@ -259,12 +276,13 @@ class Grafo(Generic[V,E]):
             -   (int): indice del vertice
 
         **excepciones**
-            -   
+            -   **TypeError**: si el vertice no es del tipo ingresado V
+            -   **VerticeNoEncontradoError**: si el vertice no pertenece al grafo
         """
         self.__validarVertice(vertice)
         return self.__vertices[vertice]
 
-    def __conectarVertices__(self, vertice1:V, vertice2:V, tipoAdyacencia:int, coneccion:E, peso:int):
+    def __conectarVertices__(self, vertice1:V, vertice2:V, tipoAdyacencia:int, coneccion:E):
         """Dado dos vertices, un tipo de ayacencia, un dato de arista, y un peso, conecta los dos vertices ingresados
         ingresando el tipo de Adyacencia en la matriz de adyacencia, la coneccion en la matriz de aristas,
         y el peso en la matriz de pesos
@@ -274,7 +292,6 @@ class Grafo(Generic[V,E]):
             -   vertice2 (V): pertenece al grafo
             -   tipoAdyacencia (int): 0 (SIN ADYACENCIA) o 1 (ADYACENCIA)
             -   coneccion (E)
-            -   peso (int)
 
         **Excepciones**
             -   **AdyacenciaError**: si los dos vertices ingresados son el mismo vertice
@@ -283,11 +300,10 @@ class Grafo(Generic[V,E]):
         j = self.__indiceVertice(vertice2)
         validarValorCompatible(i,j,"No se puede conectar un vertice consigo mismo en este tipo de grafo",AdyacenciaError)
 
-        self.__adyacencia[i][j] = tipoAdyacencia
-        self.__aristas[i][j]    = coneccion 
-        
+        self.__adyacencia.setItem(i,j, tipoAdyacencia)
+
         if self.esPesado():
-            self.__pesos[i][j] = peso
+            self.__aristas.setItem(i,j,coneccion)
 
     
     def __cargarConexion(self, grafoDonante:Grafo[V,E]):
@@ -307,26 +323,23 @@ class Grafo(Generic[V,E]):
 
 
     #VALIDACIONES
-    def __validarConexion(self, vertice1:V, vertice2:V, coneccion:E, peso:int):
+    def __validarConexion(self, vertice1:V, vertice2:V, coneccion:E):
         """Hace las validaciones necesarias para conectar dos vertices
         
         **parameters**
             -   vertice1 (V): pertenece al grafo y no está conectado a vertice2
             -   vertice2 (V): pertenece al grafo y no está conectado a vertice1
             -   coneccion (E): puede ser None
-            -   peso (int): positivo, si el grafo no es pesado debe ser None
 
         **excepciones**
             -   **TypeError** si ninguno de las entradas tiene el tipo de dato correspondiente
             -   **VerticeNoEncontradoError** si alguno de los vertices no pertece al grafo
             -   **AdyacenciaError** si los vertices ya están conectados
-            -   **PesoInvalido** si el peso es negativo o cero
             -   **TipoGrafoIncompatible** si el grafo no es pesado y se ingreso un peso
         """
         self.__validarVertice(vertice1)
         self.__validarVertice(vertice2)
-        self.__validarArista(coneccion)        
-        self.__vaidarPeso(peso)
+        self.__validarArista(coneccion)
         validarCondicion(self.estaConectado(vertice1, vertice2), "Estos vertices ya estan conectados", AdyacenciaError)
 
     def __validarDesconexion(self, vertice1:V, vertice2:V):
@@ -383,28 +396,6 @@ class Grafo(Generic[V,E]):
             -   **TypeError**: si el dato ingresado no es del tipo ingresado E
         """
         self.__tipoE.__validarEntrada__(arista,True)
-                
-    def __vaidarPeso(self, peso:int):
-        """Valida un peso ingresado
-        
-        **parameters**
-            -   peso (int): mayor que cero. Si el grafo no es pesado, debe ser None
-
-        **excepciones**
-            -   **TypeEror**: Si el peso ingresado no es un int
-            -   **PesoInvalido**: si el peso es menor o igual a cero
-            -   **TipoGrafoIncompatible**: si se ingresa un peso siendo un grafo no pesado
-        """
-        if (self.esPesado()):
-            validarTipoObjeto(int, peso, "Ingrese un peso int")
-            validarNoNegativo(peso,False,"Ingrese un peso mayor que cero",PesoInvalido)
-        elif (peso is not None):
-            raise TipoGrafoIncompatible("Esta operacion no se puede hacer porque el grafo no está pesado")
-
-    #CURSOR
-    class Cursor:
-        __dato:V
-
 
     #ESTATICOS
     @staticmethod
@@ -677,198 +668,7 @@ class Grafo(Generic[V,E]):
         """
         return self.__tipoE.getType()
 
-    def visualizar(self, titulo: str = None, mostrar_pesos: bool = True, mostrar_nombres: bool = True, figsize: tuple[int, int] = (8, 6), font_size: int = 12):
-        """Muestra una visualización del grafo usando matplotlib. """
-        try:
-            import matplotlib.pyplot as plt
-        except ImportError as error:
-            raise ImportError("matplotlib no está instalado. Instale matplotlib para visualizar el grafo.") from error
-
-        try:
-            import networkx as nx
-        except ImportError:
-            nx = None
-
-        vertices = list(self.__vertices.keys())
-        if len(vertices) == 0:
-            raise ValueError("El grafo no tiene vertices para visualizar.")
-
-        dirigido = isinstance(self, Digrafo)
-        titulo = titulo or ("Digrafo" if dirigido else "Grafo")
-
-        def obtener_etiqueta_origen_destino(origen, destino):
-            origen_indice = self.__indiceVertice(origen)
-            destino_indice = self.__indiceVertice(destino)
-            etiqueta = None
-            if self.__aristas[origen_indice][destino_indice] is not None:
-                etiqueta = str(self.__aristas[origen_indice][destino_indice])
-            if self.esPesado() and mostrar_pesos:
-                peso = self.__pesos[origen_indice][destino_indice]
-                if etiqueta is None:
-                    etiqueta = str(peso)
-                else:
-                    etiqueta = f"{etiqueta} ({peso})"
-            return etiqueta
-
-        if nx is not None:
-            from matplotlib import patches
-
-            grafo = nx.DiGraph() if dirigido else nx.Graph()
-            grafo.add_nodes_from(vertices)
-            edge_labels = {}
-
-            for i, origen in enumerate(vertices):
-                for j, destino in enumerate(vertices):
-                    if not dirigido and j <= i:
-                        continue
-                    if self.estaConectado(origen, destino):
-                        etiqueta = obtener_etiqueta_origen_destino(origen, destino)
-                        grafo.add_edge(origen, destino)
-                        if etiqueta is not None:
-                            edge_labels[(origen, destino)] = etiqueta
-
-            pos = nx.spring_layout(grafo)
-            fig, ax = plt.subplots(figsize=figsize)
-            ax.set_title(titulo)
-            ax.axis("off")
-
-            nodes = nx.draw_networkx_nodes(grafo, pos, ax=ax, node_color="skyblue", node_size=700)
-            labels = nx.draw_networkx_labels(grafo, pos, ax=ax, font_size=font_size) if mostrar_nombres else {}
-
-            if dirigido:
-                edges = []
-                for u, v in grafo.edges():
-                    flecha = patches.FancyArrowPatch(
-                        pos[u],
-                        pos[v],
-                        arrowstyle="-|>",
-                        mutation_scale=20,
-                        color="gray",
-                        linewidth=1.5,
-                        shrinkA=15,
-                        shrinkB=15,
-                    )
-                    ax.add_patch(flecha)
-                    edges.append(flecha)
-            else:
-                edges = nx.draw_networkx_edges(grafo, pos, ax=ax, edge_color="gray")
-
-            edge_labels_artists = {}
-            if edge_labels:
-                edge_labels_artists = nx.draw_networkx_edge_labels(
-                    grafo,
-                    pos,
-                    edge_labels=edge_labels,
-                    ax=ax,
-                    font_color="red",
-                    font_size=max(font_size - 2, 8),
-                )
-
-            class NodoArrastrable:
-                def __init__(self, grafo, pos, nodes, labels, edges, edge_labels):
-                    self.grafo = grafo
-                    self.pos = pos
-                    self.nodes = nodes
-                    self.labels = labels
-                    self.edges = edges
-                    self.edge_labels = edge_labels
-                    self.selected = None
-
-                def _distancia(self, p1, p2):
-                    return (p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2
-
-                def presionar(self, event):
-                    if event.inaxes != ax or event.xdata is None or event.ydata is None:
-                        return
-                    click = (event.xdata, event.ydata)
-                    mejor = None
-                    mejor_dist = float("inf")
-                    for nodo, coords in self.pos.items():
-                        d = self._distancia(coords, click)
-                        if d < mejor_dist:
-                            mejor_dist = d
-                            mejor = nodo
-                    if mejor is not None and mejor_dist < 0.02:
-                        self.selected = mejor
-
-                def mover(self, event):
-                    if self.selected is None or event.inaxes != ax or event.xdata is None or event.ydata is None:
-                        return
-                    self.pos[self.selected] = (event.xdata, event.ydata)
-                    offsets = [self.pos[nodo] for nodo in self.grafo.nodes()]
-                    self.nodes.set_offsets(offsets)
-                    if mostrar_nombres:
-                        for nodo, texto in self.labels.items():
-                            x, y = self.pos[nodo]
-                            texto.set_position((x, y))
-                    if isinstance(self.edges, (list, tuple)):
-                        for idx, arco in enumerate(self.edges):
-                            if hasattr(arco, "set_positions"):
-                                u, v = list(self.grafo.edges())[idx]
-                                arco.set_positions(self.pos[u], self.pos[v])
-                    else:
-                        segmentos = []
-                        for u, v in self.grafo.edges():
-                            x1, y1 = self.pos[u]
-                            x2, y2 = self.pos[v]
-                            segmentos.append([(x1, y1), (x2, y2)])
-                        self.edges.set_segments(segmentos)
-                    for (u, v), texto in self.edge_labels.items():
-                        xm, ym = ((self.pos[u][0] + self.pos[v][0]) / 2, (self.pos[u][1] + self.pos[v][1]) / 2)
-                        texto.set_position((xm, ym))
-                    fig.canvas.draw_idle()
-
-                def soltar(self, event):
-                    self.selected = None
-
-            drag = NodoArrastrable(grafo, pos, nodes, labels, edges, edge_labels_artists)
-            fig.canvas.mpl_connect("button_press_event", drag.presionar)
-            fig.canvas.mpl_connect("motion_notify_event", drag.mover)
-            fig.canvas.mpl_connect("button_release_event", drag.soltar)
-
-            plt.subplots_adjust(left=0.05, right=0.95, top=0.95, bottom=0.05)
-            plt.show()
-            return
-
-        import math
-        from matplotlib import patches
-
-        posiciones = {}
-        angulo = 2 * math.pi / len(vertices)
-        for i, vertice in enumerate(vertices):
-            posiciones[vertice] = (math.cos(i * angulo), math.sin(i * angulo))
-
-        plt.figure(figsize=figsize)
-        for vertice, (x, y) in posiciones.items():
-            plt.scatter([x], [y], s=500, color="skyblue", zorder=2)
-            if mostrar_nombres:
-                plt.text(x, y, str(vertice), ha="center", va="center", fontsize=font_size, zorder=3)
-
-        for i, origen in enumerate(vertices):
-            for j, destino in enumerate(vertices):
-                if not dirigido and j <= i:
-                    continue
-                if self.estaConectado(origen, destino):
-                    x1, y1 = posiciones[origen]
-                    x2, y2 = posiciones[destino]
-                    etiqueta = obtener_etiqueta_origen_destino(origen, destino)
-                    if dirigido:
-                        flecha = patches.FancyArrowPatch((x1, y1), (x2, y2), arrowstyle="-|>", mutation_scale=20, color="gray", linewidth=1.5, shrinkA=15, shrinkB=15)
-                        plt.gca().add_patch(flecha)
-                    else:
-                        plt.plot([x1, x2], [y1, y2], color="gray", linewidth=1.5, zorder=1)
-                    if etiqueta is not None:
-                        xm, ym = (x1 + x2) / 2, (y1 + y2) / 2
-                        plt.text(xm, ym, etiqueta, color="red", fontsize=max(font_size - 2, 8), ha="center", va="center", zorder=4)
-
-        plt.title(titulo)
-        plt.axis("off")
-        plt.subplots_adjust(left=0.05, right=0.95, top=0.95, bottom=0.05)
-        plt.show()
-
-
-    #SETTERS
-
+   #SETTERS
     def __setTiposDatos(self, tipoVertices:type, tipoAristas:type = None):
         """Setea el tipo de datos del vertices y aristas
         
@@ -882,11 +682,195 @@ class Grafo(Generic[V,E]):
         self.__tipoV = TypeStruct(tipoVertices)
         self.__tipoE = TypeStruct(tipoAristas)
 
+    #VISUALIZAR
+    def visualizar(self):
+        try:
+            import networkx as nx
+            import matplotlib.pyplot as plt
+        except Exception:
+            raise ImportError("Instale networkx y matplotlib para usar este metodo") 
+
+        G = nx.Graph()
+        
+        self.__crearVisuales(G)
+        pos = nx.spring_layout(G)
+
+        nx.draw(
+            G, pos,
+            with_labels= True,
+            node_color="#04cec4", node_size=1500,
+            edge_color="#000000"
+        )
+        
+        plt.show()
+
+    def __crearVisuales(self, visual:nx.Graph):
+        for vertice in self:
+            visual.add_node(vertice)
+        visual.add_edges_from(self.__visualizarConexiones(visual))
+
+    def __visualizarConexiones(self,visual:nx.Graph):
+        conexiones = {}
+
+        for vertice1 in self:
+            for vertice2 in self:
+                if self.estaConectado(vertice1,vertice2) and ((vertice2, vertice1) not in conexiones.keys()):
+                    conexiones.update(
+                        {(vertice1,vertice2):self.__etiquetaArista(vertice1,vertice2)}
+                    )
+
+        return conexiones 
+
+    #lo hecho por la IA
+    def verGrafo(self, tamanioVertices: int = 1800, mostrar: bool = True) -> None:
+        """Genera y muestra una visualización interactiva del grafo.
+
+        Args:
+            tamanioVertices (int): Tamaño de los nodos en la visualización.
+            mostrar (bool): Si es True, muestra la ventana. Si es False, solo prepara la figura.
+        """
+        try:
+            import networkx as nx
+            import matplotlib.pyplot as plt
+        except Exception as error:
+            raise ImportError("Instale networkx y matplotlib para usar este metodo") from error
+
+        self.__crearVisualizacion(tamanioVertices)
+        self.__dibujarVisualizacion()
+        self.__configurarInteraccion()
+
+        if mostrar:
+            plt.show()
+
+    def __crearVisualizacion(self, tamanioVertices: int) -> None:
+        """Prepara la estructura interna necesaria para dibujar el grafo."""
+        self.__tamanioVertices = tamanioVertices
+        self.__grafoVisualizacion = nx.Graph()
+        self.__grafoVisualizacion.add_nodes_from(self.getVertices())
+        self.__etiquetasAristas: Dict[Tuple[V, V], str] = {}
+
+        for vertice1 in self:
+            for vertice2 in self:
+                if self.estaConectado(vertice1, vertice2) and ((vertice2, vertice1) not in self.__grafoVisualizacion.edges):
+                    self.__grafoVisualizacion.add_edge(vertice1, vertice2)
+                    self.__etiquetasAristas[(vertice1, vertice2)] = self.__etiquetaArista(vertice1, vertice2)
+
+        self.__posicionVisualizacion: Dict[V, Tuple[float, float]] = {}
+        posiciones = nx.circular_layout(self.__grafoVisualizacion, scale=1.2)
+        for vertice in self:
+            self.__posicionVisualizacion[vertice] = posiciones[vertice]
+
+    def __dibujarVisualizacion(self) -> None:
+        """Dibuja el grafo en una ventana de Matplotlib."""
+        self.__figura, self.__eje = plt.subplots()
+        self.__eje.clear()
+        nx.draw(
+            self.__grafoVisualizacion,
+            pos=self.__posicionVisualizacion,
+            with_labels=True,
+            node_size=self.__tamanioVertices,
+            node_color="#4bd5e7",
+            edge_color="#000000",
+            width=1.5,
+            ax=self.__eje,
+        )
+
+        if self.__etiquetasAristas:
+            nx.draw_networkx_edge_labels(
+                self.__grafoVisualizacion,
+                pos=self.__posicionVisualizacion,
+                edge_labels=self.__etiquetasAristas,
+                ax=self.__eje,
+                font_size=9,
+            )
+
+        self.__eje.set_title("Grafo")
+        self.__figura.canvas.draw_idle()
+
+    def __configurarInteraccion(self) -> None:
+        """Registra los eventos de ratón para permitir mover los nodos."""
+        self.__nodoSeleccionado: Optional[V] = None
+        self.__figura.canvas.mpl_connect("button_press_event", self.__alHacerClick)
+        self.__figura.canvas.mpl_connect("motion_notify_event", self.__alMoverRaton)
+        self.__figura.canvas.mpl_connect("button_release_event", self.__alSoltarClick)
+
+    def __alHacerClick(self, evento: object) -> None:
+        """Selecciona un nodo cuando el usuario hace clic sobre él."""
+        if getattr(evento, "inaxes", None) is None:
+            return
+        if getattr(evento, "xdata", None) is None or getattr(evento, "ydata", None) is None:
+            return
+
+        for nodo, posicion in self.__posicionVisualizacion.items():
+            distancia = (evento.xdata - posicion[0]) ** 2 + (evento.ydata - posicion[1]) ** 2
+            if distancia < 0.1:
+                self.__nodoSeleccionado = nodo
+                return
+
+        self.__nodoSeleccionado = None
+
+    def __alMoverRaton(self, evento: object) -> None:
+        """Actualiza la posición del nodo seleccionado mientras se arrastra."""
+        if self.__nodoSeleccionado is None:
+            return
+        if getattr(evento, "inaxes", None) is None:
+            return
+        if getattr(evento, "xdata", None) is None or getattr(evento, "ydata", None) is None:
+            return
+
+        self.__posicionVisualizacion[self.__nodoSeleccionado] = (evento.xdata, evento.ydata)
+        self.__eje.clear()
+        nx.draw(
+            self.__grafoVisualizacion,
+            pos=self.__posicionVisualizacion,
+            with_labels=True,
+            node_size=self.__tamanioVertices,
+            node_color="#4bd5e7",
+            edge_color="#000000",
+            width=1.5,
+            ax=self.__eje,
+        )
+
+        if self.__etiquetasAristas:
+            nx.draw_networkx_edge_labels(
+                self.__grafoVisualizacion,
+                pos=self.__posicionVisualizacion,
+                edge_labels=self.__etiquetasAristas,
+                ax=self.__eje,
+                font_size=9,
+            )
+
+        self.__eje.set_title("Grafo")
+        self.__figura.canvas.draw_idle()
+
+    def __alSoltarClick(self, evento: object) -> None:
+        """Deselecciona el nodo cuando el usuario suelta el botón del ratón."""
+        self.__nodoSeleccionado = None
+
+    def __etiquetaArista(self, vertice1: V, vertice2: V) -> str:
+        """Devuelve la etiqueta visible para una arista.
+
+        Si la arista tiene datos asociados, se muestran como texto. Si no,
+        se devuelve una cadena vacía para no mostrar nada.
+        """
+        
+        if not self.esPesado():
+            return ""
+
+        dato = self.__aristas.getItem(
+            self.__indiceVertice(vertice1),
+            self.__indiceVertice(vertice2)
+        )
+
+        return str(dato)
+
+
+ 
 
 #Digrafo ------------------------------------------------------------------------------------------------------
 class Digrafo(Grafo,Generic[V,E]):
     #CONSTRUCTOR
-    def __init__(self, tipoVertices, tipoAristas = None, pesado = False):
+    def __init__(self, tipoVertices:V, tipoAristas:E = None):
         """Construye un digrafo dado un tipo de vertices
         
         **parameters**
@@ -897,7 +881,7 @@ class Digrafo(Grafo,Generic[V,E]):
         **excepciones**
             -   **TypeError**: Si ninguno de los datos ingresados es del tipo correspondiente  
         """
-        super().__init__(tipoVertices, tipoAristas, pesado)
+        super().__init__(tipoVertices, tipoAristas)
         
     #METODOS DE CLASE
 

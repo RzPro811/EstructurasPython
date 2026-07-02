@@ -1,4 +1,4 @@
-from .Vector import Vector, Matriz
+from .Vector import Vector, Matriz, PRIMERA_POSCICION
 from .Validaciones import validarTipoObjeto, validarCondicion, validarRango,validarValorObligatorio, FalloValidacion
 from .Excepciones.Algebraicos import *
 
@@ -142,26 +142,44 @@ class VectorAlgebraico:
 class MatrizAlgebraica:
     #ATRIBUTOS
     __matriz:Matriz
+    __permitirFloat:bool
     #CONSTRUCTOR
     def __init__(self, *filas:VectorAlgebraico, permtirFloat:bool = False):
-        self.__validarFilas(filas, permtirFloat=permtirFloat)
+        self.__validarFilas(*filas, permtirFloat=permtirFloat)
 
-        self.__matriz = Matriz(int,len(filas), len(filas[0]))
+        self.__permitirFloat = permtirFloat
+        if permtirFloat:
+            self.__matriz = self.__matriz = Matriz(float,len(filas), filas[0].getDimension())
+        else: self.__matriz = Matriz(int,len(filas), filas[0].getDimension())
+        
         for i in range(len(filas)):
-            for j in range(len(filas[0])):
-                self.__matriz[i][j] = filas[i][j]
-
+            for j in range(filas[0].getDimension()):
+                if permtirFloat:
+                    self.__matriz.setItem(i,j,float(filas[i][j]))
+                else:
+                    self.__matriz.setItem(i,j,filas[i][j])
+                
 
     #METODOS GENERALES
+    def __str__(self):
+        return "M :\n"+str(self.__matriz)
+        
     #METODOS DE CLASE
+
+    def tieneFloat(self):
+        return self.__permitirFloat
+    
+    def esCuadarada(self):
+        return self.__matriz.esCuadrada()
+
     #METODOS INTERNOS
     #VALIDACIONES
     
     def __validarFilas(self, *filas:VectorAlgebraico, permtirFloat:bool):
         validarTipoObjeto(bool, permtirFloat, "Ingrese una condicion booleana", TypeError)
+
         anteriorFila:VectorAlgebraico = None
-        if permtirFloat: mensaje = "Ingresa numeros int o float"
-        else: mensaje = "Ingresa numeros int unicamente"
+        
         for fila in filas:
             validarTipoObjeto(VectorAlgebraico,fila, "Las filas de la matriz algebraica deben ser vectores algebraicos")
             if anteriorFila == None:
@@ -169,13 +187,100 @@ class MatrizAlgebraica:
             else:
                 validarValorObligatorio(fila.getDimension(),anteriorFila.getDimension(),
                                         "Todas las filas deben tener la misma dimension", DimensionIncompatibleError)
-            for numero in fila:    
-                validarCondicion(
-                    (not isinstance(numero, int)) and (not isinstance(numero, float) or not permtirFloat),
-                    mensaje, TypeError 
-                )
+            
+    
 
+    @staticmethod
+    def validarMatriz(matriz:MatrizAlgebraica):
+        validarTipoObjeto(MatrizAlgebraica,matriz, "Ingrese una matriz algebráica")
 
+    @staticmethod
+    def validarOperaciones(matriz1:MatrizAlgebraica, matriz2:MatrizAlgebraica):
+        MatrizAlgebraica.validarMatriz(matriz1)
+        MatrizAlgebraica.validarMatriz(matriz2)
+        validarValorObligatorio(matriz1.getDimensionFila(),matriz2.getDimensionFila(),
+                                "Esta operacion requiere que ambas matrices tengan las mismas dimensiones", DimensionIncompatibleError)
+        
+        validarValorObligatorio(matriz1.getDimensionColumna(),matriz2.getDimensionColumna(),
+                                "Esta operacion requiere que ambas matrices tengan las mismas dimensiones", DimensionIncompatibleError)
 
     #OPERACIONES
+    def __add__(self, other:MatrizAlgebraica) -> MatrizAlgebraica:
+        self.validarOperaciones(self,other)
+        resultado = []
+
+        for i in range(self.getDimensionColumna()):
+            fila = []
+            for j in range(self.getDimensionFila()):
+                fila.append(self.getItem(i,j)+other.getItem(i,j))
+            
+            resultado.append(VectorAlgebraico(*fila, permitirFloat=self.tieneFloat() or other.tieneFloat()))
+        
+        return MatrizAlgebraica(*resultado, permtirFloat=self.tieneFloat() or other.tieneFloat())
+
+    def __mul__(self, other:int|float) -> MatrizAlgebraica:
+        resultado = []
+        tieneFloat = False
+
+        for i in range(self.getDimensionColumna()):
+            fila = []
+            for j in range(self.getDimensionFila()):
+                fila.append(self.__matriz.getItem(i,j) * other)
+
+            if not tieneFloat:
+                tieneFloat = self.tieneFloat() or isinstance(other,float)
+
+            resultado.append(VectorAlgebraico(*fila,permitirFloat= tieneFloat))
+        
+        return MatrizAlgebraica(*resultado, permtirFloat= tieneFloat)
+    def __rmul__(self, other:int|float):
+        return self*other
+
+    def __neg__(self):
+        return self*(-1)
+
+    def __sub__(self, other:MatrizAlgebraica):
+        return self + (-other)
+        
+    
+
     #GETTERS
+    def getTraza(self):
+        validarCondicion(not self.esCuadarada(), "La traza solo funciona para matrices cuadradas", DimensionIncompatibleError)
+
+        traza = 0
+
+        for i in range(self.getDimensionFila()):
+            traza += self.getItem(i,i)
+
+        return traza
+
+    def getTraspuesta(self):
+        traspuesta = []
+
+        for i in range(self.getDimensionFila()):
+            fila = []
+            for j in range(self.getDimensionColumna()):
+                fila.append(self.getItem(j,i))
+
+            traspuesta.append(VectorAlgebraico(*traspuesta, permitirFloat = self.tieneFloat()))
+
+        return MatrizAlgebraica(*traspuesta, permtirFloat= self.tieneFloat())
+
+    def getDeterminante(self) -> int|float:
+        validarCondicion(self.esCuadarada(), "El determinante solo funciona para matrices cuadradas", DimensionIncompatibleError)
+
+        if self.getDimensionColumna() == 1:
+            return self.getItem(1,1)
+
+    def getItem(self, indice:int, jndice:int) -> int|float:
+        return self.__matriz.getItem(indice,jndice)
+
+    def getDimensionFila(self):
+        return self.__matriz.getLongitudFila()
+    
+    def getDimensionColumna(self):
+        return self.__matriz.getLongitudColu()
+    
+    def getItem(self, i, j):
+        return self.__matriz.getItem(i,j)

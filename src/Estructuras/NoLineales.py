@@ -1,14 +1,13 @@
-from .Validaciones import TypeStruct, Generic, T, validarCondicion, validarTipoObjeto
+from .Validaciones import TypeStruct, Generic, T, validarCondicion
 from .Vector import PRIMERA_POSCICION
 from .Excepciones.Generales import *
+from .Lista import Lista
 
 
 #COLA-------------------------------------------------------------------------------------------------------------------------------------------
 class Cola(Generic[T], TypeStruct):
-    #CONSTANTES
-    __PRIMER_DATO = 0
     #ATRIBUTOS
-    __cola:list[T]
+    __cola:Lista[T]
 
     #CONSTRUCTOR
     def __init__(self, tipo:type):
@@ -21,26 +20,46 @@ class Cola(Generic[T], TypeStruct):
             -   **TypeError**: si el tipo ingresado no es type
         """
         super().__init__(tipo)
-        self.__cola = []
+        self.__cola = Lista(tipo)
 
     #METODOS GENERALES
     def __str__(self):
-        return "[COLA] proximo elemento a salir: " +str(self.__cola[self.__PRIMER_DATO])
+        return "[COLA] "
 
     def __len__(self):
         return len(self.__cola)
 
     #METODOS DE CLASE
-    def estaVacia(self):
-        return len(self) == 0
+    def estaVacia(self) -> bool:
+        """Valida que la cola esté vacia
+        
+        **return**
+            -   (bool) Verdadero si la cola no tiene elementos, falso si si
+        """
+        return self.__cola.estaVacia()
 
     def agregar(self, elemento:T):
-        self.__validarEntrada__(elemento)
-        self.__cola.append(elemento)
+        """Agrega un elemento a la cola
+        
+        **parameters**
+            -   elemento (T)
+
+        **excepciones**
+            -   **TypeError**: si el elemento ingresado no es del tipo ingresado T
+        """
+        self.__cola.agregarFinal(elemento)
 
     def quitar(self) -> T:
+        """Quita el elemento que fue agregado antes que todos los demas de la cola
+        
+        **return**
+            -   (T) primer elemento de la cola
+
+        **excepciones**
+            -   **VacioError**: si la cola está vacia
+        """
         self.__validarColaVacia()
-        return self.__cola.pop(self.__PRIMER_DATO)
+        return self.__cola.quitarInicio()
     
     #VALIDACIONES
     def __validarColaVacia(self):
@@ -54,7 +73,7 @@ class Cola(Generic[T], TypeStruct):
 
 class Pila(Generic[T], TypeStruct):
     #ATRIBUTOS
-    __pila:list[T]
+    __pila:Lista[T]
 
     #CONSTRUCTOR
     def __init__(self, tipo:type):
@@ -71,22 +90,41 @@ class Pila(Generic[T], TypeStruct):
 
     #METODOS GENERALES
     def __str__(self):
-        return "[PILA] proximo elemento a salir: " +str(self.__pila[self.getLongitud()-1])
+        return "[PILA]"
 
     def __len__(self):
-        return len(self.__pila)
+        return self.__pila.getLongitud()
 
     #METODOS DE CLASE
     def estaVacia(self):
-        return len(self) == 0
+        """Valida que la pila esté vacia
+        
+        **return**
+            -   (bool) Verdadero si la pila no tiene elementos, falso si si
+        """
+        return self.__pila.estaVacia()
 
     def agregar(self, elemento:T):
-        self.__validarEntrada__(elemento)
-        self.__pila.append(elemento)
+        """Agrega un elemento a la pila
+    
+        **parameters**
+            -   elemento (T)
+
+        **excepciones**
+            -   **TypeError**: si el elemento ingresado no es del tipo ingresado T"""
+        self.__pila.agregarFinal(elemento)
 
     def quitar(self) -> T:
+        """Quita el ultimo elemento agregado a la pila
+        
+        **return**
+            -   (T) ultimo elemento de la pila
+
+        **excepciones**
+            -   **VacioError**: si la pila está vacia
+        """
         self.__validarPilaVacia()
-        return self.__pila.pop()
+        return self.__pila.quitarFinal()
     
     #VALIDACIONES
     def __validarPilaVacia(self):

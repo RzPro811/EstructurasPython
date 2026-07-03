@@ -316,19 +316,64 @@ class TypeStruct:
         self.__tipo = tipo
 
 class DataStruct(TypeStruct,Generic[T]):
+    """Heredable para crear estructuras de datos enlazadas, digase Listas, Arboles, lo que se te ocurra.
+    Con esta clase se podrán crear los nodos que almacenan un unico tipo de dato
+    """
     #ATRIBUTOS
     __dato:T
+    __permitirNone:bool
 
     #CONSTRUCTOR
     def __init__(self, tipo:type, dato:T, permitirNone:bool = False):
+        """Heredable para objetos que almacenan un solo dato y sirven para linkear cosas, qsy, como Arboles o Listas
+        
+        **parameters**
+            -   tipo (type)        
+            -   dato (T): del mismo tipo que el tipo
+            -   permitirNone (bool): por defecto False. Si es True, entonces permitira guardar None en los DataStructs
+
+        **excepciones**
+            -   **TypeError**: si el dato ingresado no coincide con el tipo ingresado
+
+        """
         super().__init__(tipo)
-        self.setDato(dato,permitirNone)
+        self.__setPermitirNone(permitirNone)
+        self.setDato(dato)
 
     #GETTERS
     def getDato(self) -> T:
+        """Obtiene el dato almacenado
+        
+        **return**
+            -   (T) dato almacenado
+        """
         return self.__dato
     
+    def __getPermitirNone(self) -> bool:
+        """Retorna la condicion de permtir none
+        
+        **return**
+            -   (bool) Verdadero si el dataStruct permiteNone, falso si no
+        """
+        return self.__permitirNone
+    
     #SETTERS
-    def setDato(self, dato:T, permitirNone:bool = False):
-        self.__validarEntrada__(dato, permitirNone)
+    def setDato(self, dato:T):
+        """Almacena el dato en la estructura
+        
+        **parameters**
+            -   dato (T)
+            
+        **excepciones**
+            -   **TypeError**: si el dato ingresado no corresponde con el tipo ingresado
+        """
+        self.__validarEntrada__(dato,self.__getPermitirNone())
         self.__dato = dato
+
+    def __setPermitirNone(self, permitir:bool):
+        """Setea si se permite o no el None
+        
+        **parameters**
+            -   permitirNone (bool): por defecto False. Si es True, entonces permitira guardar None en los DataStructs
+        """
+        self.__permitirNone = permitir

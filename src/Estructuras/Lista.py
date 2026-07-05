@@ -1,4 +1,4 @@
-from .Validaciones import DataStruct, TypeStruct, Generic, T, validarTipoObjeto, validarCondicion
+from .Validaciones import DataStruct, TypeStruct, Generic, T, validarTipoObjeto, validarCondicion, validarRango
 from .Vector import Vector
 from .Excepciones.Generales import *
 from .Excepciones.LinkedList import *
@@ -241,7 +241,7 @@ class Cursor(TypeStruct,Generic[T]):
             -   **ErrorCursorDesactivado**: si el cursor esta apagado
         """
         self.validarCursorPrendido()
-        self.setNodo()
+        self.setNodo(self.getNodo().getAnterior())
 
     def insertar(self, dato:T):
         """Dado un dato, inserta un nodo con ese dato entre dos nodos
@@ -432,6 +432,7 @@ class Lista(TypeStruct, Generic[T]):
         self.__setPrimero(self.__getPrimero().getSiguiente())
         Nodo.conectarNodos(None, self.__getPrimero())
         Nodo.desconectarNodo(nodo)
+        self.__restarObjeto()
 
         return nodo.getDato()
 
@@ -470,6 +471,7 @@ class Lista(TypeStruct, Generic[T]):
         self.__setUltimo(self.__getUltimo().getAnterior())
         Nodo.conectarNodos(self.__getUltimo(), None)
         Nodo.desconectarNodo(nodo)
+        self.__restarObjeto()
 
         return nodo.getDato()
 
@@ -495,6 +497,7 @@ class Lista(TypeStruct, Generic[T]):
             -   **VacioError**: si la lista está vacia
         """
         validarCondicion(self.estaVacia(), "La lista está vacia", VacioError)
+
     #MANEJO CURSORES
     def __generarCursores(self) -> Vector[Cursor[T]]:
         """Generea un vector de cursores permitidos para hacer
@@ -509,7 +512,207 @@ class Lista(TypeStruct, Generic[T]):
 
         self.__cursores = vectorCursores
 
-    #GETTERS
+    def cursoresDisponibles(self, cantidad:int = 1) -> bool:
+        """Verfica que haya cursores diponibles
+        
+        **parameters**
+            -   cantidad (int): por defecto 1. Ingrese otra cantidad si necesitas esa cantidad de cursores encendidos
+
+        **excepciones**
+            -   
+        """ 
+        self.__validarIndiceCursor(cantidad)
+
+        disponible = False
+        libres = 0
+        i = 0
+
+        while (i <= MAXIMO_CURSORES) and (libres < cantidad):
+            if (self.__cursores[i].estaPrendido()):
+                libres+=1
+                
+            if libres < cantidad:
+                libres = True
+
+            i+=1
+
+        return disponible
+    
+    def activarCursorInicio(self) -> int:
+        i = 0
+        encedido = False
+
+        while (i < MAXIMO_CURSORES) and not encedido:
+            if (not self.__cursores[i].estaPrendido()):
+                encedido = True
+                self.__cursores[i].activarCursor(self.__getPrimero())
+            else:
+                i+=1
+        
+        if not encedido:
+            raise ErrorCursorEncendido("Todos los cursores han sido encendidos")
+
+        return i+1
+
+    def activarCursorFinal(self) -> int:
+        i = 0
+        encedido = False
+
+        while (i < MAXIMO_CURSORES) and not encedido:
+            if (not self.__cursores[i].estaPrendido()):
+                encedido = True
+                self.__cursores[i].activarCursor(self.__getUltimo())
+            else:
+                i+=1
+
+        if not encedido:
+            raise ErrorCursorEncendido("Todos los cursores han sido encendidos")
+
+        return i+1
+
+    def iniciarCursorInicio(self, i:int = 1):
+        self.__validarCursorNoUsable(i)
+        self.__getCursor(i).activarCursor(self.__getPrimero())
+
+    def iniciarCursorFinal(self, i:int = 1):
+        self.__validarCursorNoUsable(i)
+        self.__getCursor(i).activarCursor(self.__getUltimo())
+
+    def desactivarCursor(self, i:int = 1):
+        self.__validarCursorUsable(i)
+        self.__getCursor(i).desactivarCursor()
+
+    def prenderTodosLosCursoresInicio(self):
+        for cursor in self.__cursores:
+            if cursor.estaPrendido():
+                cursor.desactivarCursor()
+
+            cursor.activarCursor(self.__getPrimero())
+
+    def prenderTodosLosCursoresFinal(self):
+        for cursor in self.__cursores:
+            if cursor.estaPrendido():
+                cursor.desactivarCursor()
+
+            cursor.activarCursor(self.__getUltimo())
+
+    def apagarTodosLosCursores(self):
+        for cursor in self.__cursores:
+            if cursor.estaPrendido():
+                cursor.desactivarCursor()
+
+    def avanzarCursor(self, i:int = 1):
+        self.__getCursor(i).avanzarNodo()
+
+    def retrocederCursor(self, i:int = 1):
+        self.__getCursor(i).retrocederNodo()
+
+    def insertarCursor(self, dato:T, i:int = 1):
+        self.__validarCursorUsable(i)
+        self.__validarEntrada__(dato)
+
+        self.__getCursor(i).insertar(dato)
+
+    def extirparCursor(self, i:int = 1) -> T:
+        self.__validarCursorUsable(i)
+
+        return self.__getCursor(i).extirpar()
+
+    def intercambiarCursorSiguiente(self, i = 1):
+        self.__validarCursorUsable(i) 
+        
+        dato = self.getDatoCursor(i)
+        self.__getCursor(i).setDatoCursor(self.__getCursor(i).getNodo().getSiguiente().getDato())
+        self.__getCursor(i).getNodo().getSiguiente().setDato(dato)
+
+    def intercambiarCursorAnterior(self, i = 1):
+        self.__validarCursorUsable(i) 
+        
+        dato = self.getDatoCursor(i)
+        self.__getCursor(i).setDatoCursor(self.__getCursor(i).getNodo().getSiguiente().getDato())
+        self.__getCursor(i).getNodo().getSiguiente().setDato(dato)
+
+    def intercambiarCursores(self,i:int, j:int):
+        self.__validarCursorUsable(i)
+        self.__validarCursorUsable(j)
+
+        dato = self.getDatoCursor(i)
+        self.setDatoCursor(self.getDatoCursor(j), i)
+        self.setDatoCursor(dato, j)
+
+    def cursorPrendido(self, i:int = 1):
+        return self.__getCursor(i).estaPrendido()
+
+    def llegoAlFin(self, i:int = 1) -> bool:
+        self.__validarCursorUsable(i)
+        return self.__getCursor(i).getNodo().getSiguiente() is None
+    
+    def llegoAlInicio(self, i:int = 1) -> bool:
+        self.__validarCursorUsable(i)
+        return self.__getCursor(i).getNodo().getAnterior() is None
+    
+
+    #VALIDACIONES
+    def __validarIndiceCursor(self, indice:int):
+        """Verifica que un indice usado para usar un cursor sea valido
+
+        **parameters**
+            -   indice (int): entre 1 y 3
+
+        **excepciones**
+            -   **TypeError** si el indice ingresado no es un int
+            -   **ValidarRango** si el indice es menor que 1 o mayor que 3
+        """   
+        validarTipoObjeto(int, indice, "Ingresa un indice int")
+        validarRango(indice, 1 , MAXIMO_CURSORES, 
+                     mensaje=f"solo hay {MAXIMO_CURSORES} disponibles"
+        )
+
+    def __validarCursorUsable(self, i:int):
+        """Valida que, el cursor en la poscicion ingresada i, esté prendido
+
+        **parameters**
+            -   i (int): entre 1 y 3
+
+        **excepciones**
+            -   **TypeError** si el indice ingresado i no es un int
+            -   **ValidarRango** si el indice es menor que 1 o mayor que 3
+            -   **ErrorCursorDesactivado** si el cursor de la poscicion ingresada esta apagado
+        """
+        self.__validarIndiceCursor(i)
+        self.__getCursor(i).validarCursorPrendido()
+
+    def __validarCursorNoUsable(self, i:int):
+        """Valida que, el cursor en la poscicion ingresada i, este apagado
+
+        **parameters**
+            -   i (int): entre 1 y 3
+
+        **excepciones**
+            -   **TypeError** si el indice ingresado i no es un int
+            -   **ValidarRango** si el indice es menor que 1 o mayor que 3
+            -   **ErrorCursorDesactivado** si el cursor de la poscicion ingresada esta prendido
+        """
+        self.__validarIndiceCursor(i)
+        self.__getCursor(i).validarCursorApagado()
+
+
+    #GETTERS    
+    def getDatoCursor(self, i:int = 1) -> T:
+        self.__validarCursorUsable(i)
+        return self.__getCursor(i).getDatoCursor()
+
+    def getSiguienteCursor(self, i:int = 1) -> T:
+        return self.__getCursor(i).getNodo().getSiguiente().getDato()
+    
+    def getAnteriorCursor(self, i:int = 1) -> T:
+        return self.__getCursor(i).getNodo().getAnterior().getDato()
+
+    def __getCursor(self,i:int) -> Cursor[T]:
+        self.__validarIndiceCursor(i)
+        return self.__cursores[i-1]
+
+
     def __getPrimero(self) -> Nodo[T]:
         """Retorna el primer nodo de la lista
         
@@ -532,7 +735,11 @@ class Lista(TypeStruct, Generic[T]):
         return self.__longitud
     
     #SETTERS
-    
+    def setDatoCursor(self, dato:T, i:int = 1):
+        self.__validarCursorUsable(i)
+        self.__validarEntrada__(dato)
+        self.__getCursor(i).setDatoCursor(dato)
+
     def __setPrimero(self, nodo:Nodo[T]):
         """Setea al primer nodo de la lista
         

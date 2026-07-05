@@ -34,7 +34,9 @@ class Vector(Generic[T], TypeStruct):
             cadena += f"{item}, "
 
         return cadena[:-2] + " >"
-        
+    def __repr__(self):
+        return self.__str__()
+
     def __len__(self) -> int:
         return len(self.__array)
     

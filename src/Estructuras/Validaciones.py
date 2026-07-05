@@ -224,7 +224,12 @@ def validarValorObligatorio(valor:int, valorObligatorio:int, mensaje:str = None,
     
     if valor != valorObligatorio: raise error(mensaje)
 
-
+def validarNoNone(dato:T, mensaje:str = None, error:Exception = TypeError):    
+    validarError(error)
+    mensaje = crearMensaje(f"ingrese un valor distinto de None", mensaje)
+    
+    if dato is None:
+        raise error(mensaje)
 
 #HEREDABLE PARA ESTRUCTURA DE UN SOLO DATO ------------------------------------------------------------------
 

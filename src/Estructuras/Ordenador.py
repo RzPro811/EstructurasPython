@@ -295,6 +295,20 @@ class Ordenador:
             i+=1
     
     def bubbleSortLista(self, lista:Lista[T]):
+        """BUBBLE SORT (LISTA)
+        
+        Dado un lista, lo recorre tantas veces como la longitud del lista - 1.
+        En cada pasa intercambia dos elementos si el primero es mas chico que el segundo
+
+        **parameters**  
+            -   lista (Lista[T])
+
+        **excepciones**
+            -   **Incomparable** si el tipo de datos de la lista no es comparables
+        
+        **complejidad**: O(x^2)
+            -   x: longitud de la lista                   
+        """
         self.__validarLista(lista)
 
         i = 0
@@ -383,8 +397,64 @@ class Ordenador:
         lista.desactivarCursor()
 
     #GNOME SORT
+
+    def gnomeSortLista(self, lista:Lista[T]):
+        self.__validarLista(lista)
+        i = PRIMERA_POSCICION
+
+        lista.iniciarCursorInicio()
+        while (i < lista.getLongitud() - 1):
+            if self.__esMenor(lista.getDatoCursor(), lista.getSiguienteCursor()):
+                lista.avanzarCursor()
+                i+=1
+            else:
+                lista.intercambiarCursorSiguiente()
+                
+                if (i > PRIMERA_POSCICION) and not self.__esMenor(lista.getAnteriorCursor(),lista.getDatoCursor()):
+                    lista.retrocederCursor()
+                    i-=1
+
+        lista.desactivarCursor()
+
     #SHELL SORT
     #MERGE SORT
+    def __mergearAuxiliares(self, vector:Vector[T], vectorAux:Vector[T], pos1:int, pos2:int):
+        vector[pos1] = vectorAux[pos2]
+        return pos2+1
+
+    def __laGranReunificacion(self, vector:Vector[T], vectorAux1:Vector[T], vectorAux2:Vector[T]):
+        i = PRIMERA_POSCICION
+        j = PRIMERA_POSCICION
+
+        for k in range(vector.getLongitud()):
+            if j == vectorAux2.getLongitud():
+                i = self.__mergearAuxiliares(vector, vectorAux1, k, i)
+            elif i == vectorAux1.getLongitud():
+                j = self.__mergearAuxiliares(vector, vectorAux2, k, j)
+            elif (self.__esMenor(vectorAux1[i], vectorAux2[j])):
+                i = self.__mergearAuxiliares(vector, vectorAux1, k, i)
+            else:
+                j = self.__mergearAuxiliares(vector, vectorAux2, k, j)
+
+    def __generarVectorAux(self, vector:Vector[T], inicio:int, fin:int):
+        vectorAux = Vector(vector.getType(), fin - inicio)
+
+        for i in range(vectorAux.getLongitud()):
+            vectorAux[i] = vector[i + inicio]
+
+        return vectorAux
+
+    def mergeSortVector(self, vector:Vector[T]):
+        if vector.getLongitud() > 1:
+            vectorAux1 = self.__generarVectorAux(vector, PRIMERA_POSCICION, vector.getLongitud()//2)
+            vectorAux2 = self.__generarVectorAux(vector, vectorAux1.getLongitud(),vector.getLongitud())
+
+            self.mergeSortVector(vectorAux1)
+            self.mergeSortVector(vectorAux2)
+
+            self.__laGranReunificacion(vector, vectorAux1, vectorAux2)
+
+
     #QUICK SORT
     def __elegirPivote(self, vector:Vector, inicio:int, final:int):
         i = inicio
@@ -435,6 +505,59 @@ class Ordenador:
             lista.agregarFinal(heapMin.quitar())
 
     #COUNTING SORT
+    def __vectorConteo(self, estructura:Vector[int]|Lista[int]) -> Vector[int]:
+        conteo = Vector(int, max(estructura) + 1)
+
+        for i in range(conteo.getLongitud()):
+            conteo[i] = PRIMERA_POSCICION
+        return conteo
+
+    def __verPosciciones(self, estructura:Vector[int]|Lista[int], conteo:Vector[int]):
+        for numero in estructura:
+            conteo[numero] +=1
+
+    def __ajustarConteo(self, conteo:Vector[int]):
+        for i in range(1, conteo.getLongitud()):
+            conteo[i] += conteo[i-1]
+
+    def __compactadorMetodosCountingSort(self, estructura:Vector[int]|Lista[int]) -> Vector[int]:
+        conteo = self.__vectorConteo(estructura)
+        self.__verPosciciones(estructura,conteo)
+        self.__ajustarConteo(conteo)
+        return conteo
+        
+    def __reordenamientoCountingVector(self, vector:Vector[int], conteo:Vector[int]):
+        i = conteo.getLongitud() - 1 
+
+        while conteo[PRIMERA_POSCICION] > PRIMERA_POSCICION:
+            if (i > 0) and (conteo[i] == conteo[i-1]):
+                i-=1
+            else:
+                conteo[i] -= 1
+                vector[conteo[i]] = i
+ 
+    def __reordenamientoCountingLista(self, lista:Lista[int], conteo:Vector[int]):
+        i = conteo.getLongitud() - 1 
+
+        lista.iniciarCursorFinal()
+        while conteo[PRIMERA_POSCICION] > PRIMERA_POSCICION:
+            if (i > 0) and (conteo[i] == conteo[i-1]):
+                i-=1
+            else:
+                conteo[i] -= 1
+                lista.setDatoCursor(i)
+                lista.retrocederCursor()
+
+    def countingSortVector(self, vector:Vector[int]):
+        self.__validarVectorYContenido(int, vector)
+        conteo = self.__compactadorMetodosCountingSort(vector)
+        self.__reordenamientoCountingVector(vector, conteo)
+
+    def countingSortLista(self, lista:Lista[int]):
+        self.__validarVectorYContenido(int, lista)
+        conteo = self.__compactadorMetodosCountingSort(lista)
+        self.__reordenamientoCountingLista(lista, conteo)
+
     #RADIX SORT
     def __armarColas(self) -> Vector[Cola[int]]:
         colas = Vector(Cola, DIGITOS)
@@ -499,3 +622,17 @@ class Ordenador:
             ordenado = self.vectorOrdenado()
 
     #STALIN SORT
+    def stalinSortLista(self, lista:Lista):
+        self.__validarLista(lista)
+
+        lista.activarCursorInicio()
+        lista.avanzarCursor()
+
+        while lista.cursorPrendido():
+            print(lista)
+            print(lista.getDatoCursor())
+            if self.__esMenor(lista.getDatoCursor(),lista.getAnteriorCursor()):
+                lista.extirparCursor()
+            lista.avanzarCursor()
+
+        lista.desactivarCursor()

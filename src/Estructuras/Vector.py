@@ -187,7 +187,14 @@ class Vector(Generic[T], TypeStruct):
     def vaciar(self):
         """Vacia el vector"""
         self.__array = self.__generarVector(self.__getLongitudOriginal())
-    
+
+    def copiar(self):
+        copia = Vector(self.getType(), self.__getLongitudOriginal(), self.esExpansible())
+
+        copia.__array = self.__array.copy()
+
+        return copia
+
     def copiarContendio(self, vector:Vector[T]):
         """Dado un vector vacio, copia el contenido de este vector al otro vector
         

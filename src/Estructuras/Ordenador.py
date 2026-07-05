@@ -22,6 +22,7 @@ class Ordenador:
         -   **InsertionSort** (Vector)
         -   **CocktailShakerSort** (Lista)
         -   **GnomeSort** (Lista)
+        -   **ShellSort** (Lista)
         -   **MergeSort** (Vector)
         -   **QuickSort** (Vector)
         -   **HeapSort** (Vector/Lista)
@@ -366,7 +367,7 @@ class Ordenador:
 
         return terminado
 
-    def cocktailShakerSort(self, lista:Lista[T]):
+    def cocktailShakerSortLista(self, lista:Lista[T]):
         self.__validarLista(lista)
         terminado = False
         inicio, fin = PRIMERA_POSCICION, lista.getLongitud() -1
@@ -412,6 +413,27 @@ class Ordenador:
         self.__validarVector(vector)
 
     #HEAP SORT
+    def heapSortVector(self, vector:Vector[T]):
+        self.__validarVector(vector)
+        heapMin = Heap(vector.getType(),self.__metodo)
+
+        for elemento in vector:
+            heapMin.agregar(elemento)
+
+        for i in range(vector.getLongitud()):
+            vector[i] = heapMin.quitar()
+
+
+    def heapSortLista(self, lista:Lista[T]):
+        self.__validarLista(lista)
+        heapMin = Heap(lista.getType(),self.__metodo)
+
+        while not lista.estaVacia():
+            heapMin.agregar(lista.quitarInicio())
+
+        while not heapMin.estaVacio():
+            lista.agregarFinal(heapMin.quitar())
+
     #COUNTING SORT
     #RADIX SORT
     def __armarColas(self) -> Vector[Cola[int]]:

@@ -388,6 +388,17 @@ class Lista(TypeStruct, Generic[T]):
 
             return cadena[:-1] + "}"
 
+    def __iter__(self):
+        cursor = Cursor(self.getType())
+        cursor.activarCursor(self.__getPrimero())
+
+        for i in range(self.getLongitud()):
+            yield cursor.getDatoCursor()
+            
+            cursor.avanzarNodo()
+
+
+
     #METODOS DE CLASE
     def estaVacia(self) -> bool:
         """Verifica que la lista este vacia
@@ -475,28 +486,16 @@ class Lista(TypeStruct, Generic[T]):
 
         return nodo.getDato()
 
+    def mezclar(self):
+        vecAux = Vector(self.getType(),self.getLongitud())
 
-    #METODOS INTERNOS
-    def __iniciarCuenta(self):
-        """Inicia el conteo de objetos en la lista"""
-        self.__longitud = 0
+        for i in range(vecAux.getLongitud()):
+            vecAux[i] = self.quitarInicio()
 
-    def __sumarObjeto(self):
-        """Suma uno al conteo de objetos en la lista"""
-        self.__longitud += 1
-    
-    def __restarObjeto(self):
-        """Resta uno al conteo de objetos en la lista"""
-        self.__longitud -= 1
+        vecAux.mezclar()
+        for i in range(vecAux.getLongitud()):
+            self.agregarFinal(vecAux[i])
 
-    #VALIDACIONES
-    def __validarListaNoVacia(self):
-        """Valida que la lista no esté vacia
-
-        **excepciones**
-            -   **VacioError**: si la lista está vacia
-        """
-        validarCondicion(self.estaVacia(), "La lista está vacia", VacioError)
 
     #MANEJO CURSORES
     def __generarCursores(self) -> Vector[Cursor[T]]:
@@ -629,8 +628,8 @@ class Lista(TypeStruct, Generic[T]):
         self.__validarCursorUsable(i) 
         
         dato = self.getDatoCursor(i)
-        self.__getCursor(i).setDatoCursor(self.__getCursor(i).getNodo().getSiguiente().getDato())
-        self.__getCursor(i).getNodo().getSiguiente().setDato(dato)
+        self.__getCursor(i).setDatoCursor(self.__getCursor(i).getNodo().getAnterior().getDato())
+        self.__getCursor(i).getNodo().getAnterior().setDato(dato)
 
     def intercambiarCursores(self,i:int, j:int):
         self.__validarCursorUsable(i)
@@ -652,7 +651,28 @@ class Lista(TypeStruct, Generic[T]):
         return self.__getCursor(i).getNodo().getAnterior() is None
     
 
+    #METODOS INTERNOS
+    def __iniciarCuenta(self):
+        """Inicia el conteo de objetos en la lista"""
+        self.__longitud = 0
+
+    def __sumarObjeto(self):
+        """Suma uno al conteo de objetos en la lista"""
+        self.__longitud += 1
+    
+    def __restarObjeto(self):
+        """Resta uno al conteo de objetos en la lista"""
+        self.__longitud -= 1
+
     #VALIDACIONES
+    def __validarListaNoVacia(self):
+        """Valida que la lista no esté vacia
+
+        **excepciones**
+            -   **VacioError**: si la lista está vacia
+        """
+        validarCondicion(self.estaVacia(), "La lista está vacia", VacioError)
+
     def __validarIndiceCursor(self, indice:int):
         """Verifica que un indice usado para usar un cursor sea valido
 

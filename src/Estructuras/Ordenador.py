@@ -1,33 +1,197 @@
 from .Lista import Vector, Lista, T
 from .NoLineales import Heap, Cola, PRIMERA_POSCICION
-from .Validaciones import validarTipoObjeto
-
-
+from .Validaciones import validarTipoObjeto, validarMayorQue, validarOrden
+from .Excepciones.Ordenador import*
+from random import randint
 
 DIGITOS = 10
+MINIMO_RANDOM = 1
+MAXIMO_RANDOM = 1000
 
-class Incomparable(RuntimeError):
-    def __init__(self, *args):
-        """Usar si el objeto en una lista o vector, el tipo de objeto es incomparable"""
-        super().__init__(*args)
 
 class Ordenador:
+    """Ya que he creado un TDA Vector y un TDA lista, he decidido crear esta herramienta cuando haya necesidad de ordenar
+    los elementos en ambas estructuras, con el fin de que no tengas que programar vos mismo los ordenamientos necesarios
+
+    Solo crea un Ordenador, si quiere introduzca una función para ordenar segun el resultado y listo, 
+    tendrá su ordenador de Vectores y Listas enlazadas.
+
+    ### ALGORITMOS INCLUIDOS:
+        -   **BubbleSort** (Vector/Lista)
+        -   **SelectionSort** (Vector)
+        -   **InsertionSort** (Vector)
+        -   **CocktailShakerSort** (Lista)
+        -   **GnomeSort** (Lista)
+        -   **MergeSort** (Vector)
+        -   **QuickSort** (Vector)
+        -   **HeapSort** (Vector/Lista)
+        -   **CountingSort** (Vector/Lista)
+        -   **RadixSort** (Vector/Lista)
+        -   **BucketSort** (Vector/Lista)
+        -   **BogoSort** (Vector/Lista)
+        -   **StalinSort** (Vector/Lista)
+        -   **MiracleSort** (Vector/Lista)
+    
+    """
     __metodo:function
 
     #CONSTRUCTOR
     def __init__(self, metodoOrdenamiento:function = None):
+        """Crea un ordenador
+        
+        **parameters**
+            -   metodoOrdenamiento (function): por defecto None. Si se introduce una funcion, 
+            se ordenarán los datos de un vector o lista en base a lo que retorne el metodo
+
+        **excepciones**
+            -   **TypeError**: Si no se ingresa una funcion por parametro
+        """
         if not callable(metodoOrdenamiento) and (metodoOrdenamiento is not None):
             raise TypeError("Ingrese una funcion que retorne algo comparable")
         self.__metodo = metodoOrdenamiento
 
+    #METODOS DE CLASE
+    def vectorOrdenado(self, vector:Vector[T]) -> bool:
+        """Dado un vector, verifica que esté ordenado
+        
+        **parameters**
+            -   vector (Vector[T])
+
+        **return**
+            -   (bool) Verdadero si el vector está ordenado, falso si no
+
+        **excepciones**
+            -   **TypeError** si lo ingresado no fue un Vector
+        """
+        self.__validarVector(vector)
+        ordenado = True
+        i = 0
+
+        while ordenado and (i < vector.getLongitud()-1):
+            ordenado = self.__esMenor(vector[i], vector[i+1])
+            i+=1
+
+        return ordenado
+    
+    def listaOrdenada(self, lista:Lista[T]) -> bool:
+        """Dado una lista, verifica que esté ordenado
+        
+        **parameters**
+            -   lista (Lista[T])
+
+        **return**
+            -   (bool) Verdadero si la lista está ordenada, falso si no
+
+        **excepciones**
+            -   **TypeError** si lo ingresado no fue una Lista
+        """
+        self.__validarLista(lista)
+        ordenado = True
+
+        lista.activarCursorInicio()
+        while not lista.llegoAlFin() and ordenado:
+            ordenado = self.__esMenor(lista.getDatoCursor(), lista.getSiguienteCursor())
+            lista.avanzarCursor()
+
+        lista.desactivarCursor()
+        return ordenado
+    
+    def convertirAVector(self, lista:Lista[T]) -> Vector[T]:
+        self.__validarLista(lista)
+
+        vector = Vector(lista.getType(), lista.getLongitud())
+        
+        i = 0
+        for elemento in lista:
+            vector[i] = elemento
+            i+=1
+
+        return vector
+        
+    def convertirALista(self, vector:Vector) -> Lista[T]:
+        self.__validarVector(vector)
+
+        lista = Lista(vector.getType())
+
+        for elemento in vector:
+            lista.agregarFinal(elemento)
+
+        return lista
+
+    def generarVectorNumeros(self, numeroMax:int) -> Vector[int]:
+        validarMayorQue(numeroMax,MINIMO_RANDOM,
+                        mensaje= "Ingresa un numero mayor o igual que 1", error = GeneracionNegativaError)
+        vector = Vector(int, numeroMax)
+
+        for i in range(numeroMax):
+            vector[i] = i+1
+
+        return vector
+    
+    def generarVectorNumRandom(self, largo, minimo = MINIMO_RANDOM, maximo = MAXIMO_RANDOM) -> Vector[int]:
+        validarOrden(minimo, maximo, 
+                     f"El numero {maximo} es mas chico que {minimo}, debiste ingrsar {minimo} antes que {maximo}",MaximoMinimoIntercambiados)
+        vector = Vector(int, largo)
+
+        for i in range(largo):
+            vector[i] = randint(minimo, maximo)
+
+        return vector
+    
+    def generarListaNumeros(self, numeroMax:int) -> Lista[int]:
+        validarMayorQue(numeroMax,MINIMO_RANDOM,
+                        mensaje= "Ingresa un numero mayor o igual que 1", error = GeneracionNegativaError)
+        lista = Lista(int)
+
+        for i in range(numeroMax):
+            lista.agregarFinal(i+1)
+
+        return lista
+    
+    def generarListaNumRandom(self, largo, minimo = MINIMO_RANDOM, maximo = MAXIMO_RANDOM) -> Lista[int]:
+        lista = Lista(int)
+
+        for i in range(largo):
+            lista.agregarFinal(randint(minimo, maximo))
+
+        return lista
+
     #METODOS INTERNOS
     def __funcion(self, item:T):
+        """Ejecuta la funcion
+        
+        **parameters**
+            -   item (T)
+
+        **return**
+            -   (???) debe ser comparable
+        
+        **excepcioens**
+            -   **???**: las que vengan con el metodo
+        """
         return self.__metodo(item)
 
     def __hayMetodo(self) -> bool:
+        """Verfica que haya un metodo para ordenar ingresado
+        
+        **return**
+            -   (bool) verdadero si no se ingreso un none por metodo, falso si si
+        """
         return self.__metodo is not None
 
     def __esMayor(self, item:T, jtem:T) -> bool:
+        """Dado dos items, verifca que el primero sea mayor al segundo. 
+        Si uno es none, se considerará a None como el mayor.
+        Si se ingresó un metodo en el constructor, se comparara los resultados de evaluar las funciones
+        con respecto de los items ingresados
+
+        **parameters**
+            -   item (T)
+            -   jtem (T)
+        
+        **return**
+            -   (bool): si el primer elemento es mayor al segundo (o lo obtenido al evaluarlos en el metodo ingresado)
+        """
         if item is None:
             return True
         if jtem is None:
@@ -37,6 +201,18 @@ class Ordenador:
         return item > jtem
 
     def __esMenor(self, item:T, jtem:T) -> bool:
+        """Dado dos items, verifca que el primero sea menor al segundo. 
+        Si uno es none, se considerará a None como el mayor.
+        Si se ingresó un metodo en el constructor, se comparara los resultados de evaluar las funciones
+        con respecto de los items ingresados
+
+        **parameters**
+            -   item (T)
+            -   jtem (T)
+        
+        **return**
+            -   (bool): si el primer elemento es menor al segundo (o lo obtenido al evaluarlos en el metodo ingresado)
+        """
         if jtem is None:
             return True
         if item is None:
@@ -46,6 +222,7 @@ class Ordenador:
         return item < jtem
     
     def maxVector(self, vector:Vector[T]) -> T:
+        """Devuelve el maximo de un vecotr"""
         maximo = vector[PRIMERA_POSCICION]
 
         for i in range(PRIMERA_POSCICION+1, vector.getLongitud()):
@@ -85,31 +262,23 @@ class Ordenador:
         
         lista.desactivarCursor()
 
-    #MISCELANEOS
-    def vectorOrdenado(self, vector:Vector[T]) -> bool:
-        ordenado = True
-        i = 0
-
-        while ordenado and (i < vector.getLongitud()-1):
-            ordenado = self.__esMenor(vector[i], vector[i+1])
-            i+=1
-
-        return ordenado
-    
-    def listaOrdenada(self, lista:Lista[T]) -> bool:
-        self.__validarLista(lista)
-        ordenado = True
-
-        lista.activarCursorInicio()
-        while not lista.llegoAlFin() and ordenado:
-            ordenado = self.__esMenor(lista.getDatoCursor(), lista.getSiguienteCursor())
-            lista.avanzarCursor()
-
-        lista.desactivarCursor()
-        return ordenado
 
     #BUBBLE SORT
     def bubbleSortVector(self, vector:Vector[T]):
+        """BUBBLE SORT (VECTOR)
+        
+        Dado un vector, lo recorre tantas veces como la longitud del vector - 1.
+        En cada pasa intercambia dos elementos si el primero es mas chico que el segundo
+
+        **parameters**  
+            -   vector (Vector[T])
+
+        **excepciones**
+            -   **Incomparable** si el tipo de datos del vector no es comparables
+        
+        **complejidad**: O(x^2)
+            -   x: longitud del vecor                   
+        """
         self.__validarVector(vector)
 
         i = 0
@@ -178,7 +347,7 @@ class Ordenador:
             if self.__esMayor(lista.getDatoCursor(),lista.getSiguienteCursor()):
                 terminado = False
                 lista.intercambiarCursorSiguiente()
-            print(lista)
+            
             inicio+=1
             lista.avanzarCursor()
 
@@ -191,8 +360,8 @@ class Ordenador:
             if self.__esMenor(lista.getDatoCursor(), lista.getAnteriorCursor()):
                 terminado = False
                 lista.intercambiarCursorAnterior()
-            print(lista)
-            fin -=1
+
+            fin -= 1
             lista.retrocederCursor()
 
         return terminado
@@ -208,12 +377,9 @@ class Ordenador:
             inicio +=1
             
             if not terminado:
-                self.__repasoTrasero(lista, inicio, fin)
+                terminado = self.__repasoTrasero(lista, inicio, fin)
                 fin-=1
         lista.desactivarCursor()
-
-
-
 
     #GNOME SORT
     #SHELL SORT
@@ -257,10 +423,7 @@ class Ordenador:
         return colas
 
     def __calcularIndiceRadix(self, numero:int, diezPotencia:int):
-        if self.__hayMetodo():
-            return (self.__funcion(numero) // diezPotencia) %DIGITOS
-        else:
-            return (numero // diezPotencia) %DIGITOS
+        return (numero // diezPotencia) %DIGITOS
 
     def __colaNumeros(self,vector:Vector[int], colasDigitos:Vector[Cola[int]], diezPotencia:int):
         for numero in vector:
@@ -290,7 +453,6 @@ class Ordenador:
             self.__reorganizarVectorRadix(vector,colasDigitos)
             digito*=DIGITOS
 
-
     #BUCKET SORT
     #BOGO SORT
     def bogoSortVector(self, vector:Vector):
@@ -299,6 +461,13 @@ class Ordenador:
         while not ordenado:
             vector.mezclar()
             ordenado = self.vectorOrdenado(vector)
+
+    def bogoSortLista(self, lista:Lista):
+        ordenado = self.listaOrdenada(lista)
+        
+        while not ordenado:
+            lista.mezclar()
+            ordenado = self.listaOrdenada(lista)
 
     #MIRACLE SORT    
     def miracleSortVector(self, vector:Vector):

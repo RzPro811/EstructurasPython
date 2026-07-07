@@ -184,6 +184,11 @@ class Vector(Generic[T], TypeStruct):
         """Mezcla los elementos en el vector, por mera diversion"""
         shuffle(self.__array) 
 
+    def invertir(self):
+        """Invierte la lista poniendo los datos en la poscicion n en la poscion longitud - n"""
+        for i in range(self.getLongitud()//2):
+            self.intercambiar(i, self.getLongitud()-1-i)
+
     def vaciar(self):
         """Vacia el vector"""
         self.__array = self.__generarVector(self.__getLongitudOriginal())

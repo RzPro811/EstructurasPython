@@ -383,7 +383,7 @@ class Lista(TypeStruct, Generic[T]):
         
 
     #METODOS GENERALES
-    def __str__(self):
+    def __str__(self) -> str:
         if self.estaVacia():
             return "{"+"}"
         else:    
@@ -504,6 +504,24 @@ class Lista(TypeStruct, Generic[T]):
         for i in range(vecAux.getLongitud()):
             self.agregarFinal(vecAux[i])
 
+    def invertir(self):
+        """Invierte la lista poniendo los datos en la poscicion n en la poscion longitud - n"""
+        cursor1 = Cursor(self.getType())
+        cursor2 = Cursor(self.getType())
+
+        cursor1.activarCursor(self.__getPrimero())
+        cursor2.activarCursor(self.__getUltimo())
+
+        for i in range(self.getLongitud()//2):
+            aux = cursor1.getDatoCursor()
+            cursor1.setDatoCursor(cursor2.getDatoCursor())
+            cursor2.setDatoCursor(aux)
+
+            cursor1.avanzarNodo()
+            cursor2.retrocederNodo()
+
+        cursor1.desactivarCursor()
+        cursor2.desactivarCursor()
 
     #MANEJO CURSORES
     def __generarCursores(self) -> Vector[Cursor[T]]:

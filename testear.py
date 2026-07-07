@@ -3,8 +3,8 @@ from src.Estructuras.Lista import Lista, Vector
 from random import randint
 
 orden = Ordenador()
-lista:Lista = orden.generarListaNumRandom(40)
+lista:Lista = orden.generarVectorNumeros(20)
 
 print(lista)
-orden.radixSortLista(lista)
+lista.invertir()
 print(lista)

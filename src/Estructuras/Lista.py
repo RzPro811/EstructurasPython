@@ -331,6 +331,15 @@ class Cursor(TypeStruct,Generic[T]):
 
     #SETTERS
     def setDatoCursor(self, dato:T):
+        """Setea el dato almacenado en el nodo sobre el cual esta parado el cursor
+
+        **parameters**
+            -   dato (T)
+    
+        **excepciones**
+            -   **TypeError**: si el tipo del dato no es el tipo ingreado T
+            -   **ErrorCursorDesactivado**: si el cursor no está prendido
+        """
         self.validarCursorPrendido()
         self.getNodo().setDato(dato)
 
@@ -876,7 +885,7 @@ class Lista(TypeStruct, Generic[T]):
         """Obtiene el valor de el nodo, sobre el cual, el cursor está parado
         
         **parameters**
-            -   i (int): entre 1 y 3
+            -   i (int): por defecto 1. Ingrese 2 o 3 para cambiar de cursor
 
         **excepciones**
             -   **TypeError** si el indice ingresado i no es un int
@@ -890,7 +899,7 @@ class Lista(TypeStruct, Generic[T]):
         """Obtiene el valor de el nodo, el cual, es siguiente al nodo sobre el cual el cursor está parado
         
         **parameters**
-            -   i (int): entre 1 y 3
+            -   i (int): por defecto 1. Ingrese 2 o 3 para cambiar de cursor
 
         **excepciones**
             -   **TypeError** si el indice ingresado i no es un int
@@ -900,9 +909,28 @@ class Lista(TypeStruct, Generic[T]):
         return self.__getCursor(i).getNodo().getSiguiente().getDato()
     
     def getAnteriorCursor(self, i:int = 1) -> T:
+        """Obtiene el valor de el nodo, el cual, es anterior al nodo sobre el cual el cursor está parado
+        
+        **parameters**
+            -   i (int): por defecto 1. Ingrese 2 o 3 para cambiar de cursor
+
+        **excepciones**
+            -   **TypeError** si el indice ingresado i no es un int
+            -   **ValidarRango** si el indice es menor que 1 o mayor que 3
+            -   **ErrorCursorEncendido** si el cursor de la poscicion ingresada esta prendido
+        """
         return self.__getCursor(i).getNodo().getAnterior().getDato()
 
     def __getCursor(self,i:int) -> Cursor[T]:
+        """Obtiene un cursor
+        
+        **parameters**
+            -   i (int): entre 1 y 3
+
+        **excepciones**
+            -   **TypeError** si el indice ingresado i no es un int
+            -   **ValidarRango** si el indice es menor que 1 o mayor que 3
+        """
         self.__validarIndiceCursor(i)
         return self.__cursores[i-1]
 
@@ -930,6 +958,16 @@ class Lista(TypeStruct, Generic[T]):
     
     #SETTERS
     def setDatoCursor(self, dato:T, i:int = 1):
+        """Setea el valor de el nodo, sobre el cual, el cursor está parado
+        
+        **parameters**
+            -   i (int): por defecto 1. Ingrese 2 o 3 para cambiar de cursor
+
+        **excepciones**
+            -   **TypeError** si el indice ingresado i no es un int
+            -   **ValidarRango** si el indice es menor que 1 o mayor que 3
+            -   **ErrorCursorEncendido** si el cursor de la poscicion ingresada esta prendido
+        """
         self.__validarCursorUsable(i)
         self.__validarEntrada__(dato)
         self.__getCursor(i).setDatoCursor(dato)

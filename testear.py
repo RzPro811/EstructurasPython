@@ -5,8 +5,8 @@ from random import randint
 import numpy as np
 
 orden = Ordenador()
-lista:Lista = orden.generarListaNumRandom(15)
+lista:Vector = orden.generarVectorNumRandom(40)
 
 print(lista)
-orden.stalinSortLista(lista)
+orden.quickSort(lista)
 print(lista)

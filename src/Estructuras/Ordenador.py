@@ -280,6 +280,7 @@ class Ordenador:
         
         lista.desactivarCursor()
 
+    #ALGORITMOS PARA ESTRUCTURAS CASI ORDENADAS
 
     #BUBBLE SORT
     def bubbleSortVector(self, vector:Vector[T]):
@@ -509,6 +510,9 @@ class Ordenador:
         lista.desactivarCursor()
 
     #SHELL SORT
+
+    #ALGORITMOS DIVIDE Y VENCERAS
+
     #MERGE SORT
     def __mergearAuxiliares(self, vector:Vector[T], vectorAux:Vector[T], pos1:int, pos2:int):
         vector[pos1] = vectorAux[pos2]
@@ -666,6 +670,8 @@ class Ordenador:
         while not heapMin.estaVacio():
             lista.agregarFinal(heapMin.quitar())
 
+    #ALGORITMOS NO COMPARATIVOS
+
     #COUNTING SORT
     def __vectorConteo(self, estructura:Vector[int]|Lista[int]) -> Vector[int]:
         conteo = Vector(int, max(estructura) + 1)
@@ -764,8 +770,8 @@ class Ordenador:
     def __calcularIndiceRadix(self, numero:int, diezPotencia:int):
         return (numero // diezPotencia) %DIGITOS
 
-    def __colaNumeros(self,vector:Vector[int], colasDigitos:Vector[Cola[int]], diezPotencia:int):
-        for numero in vector:
+    def __colaNumeros(self,estructura:Vector[int]|Lista[int], colasDigitos:Vector[Cola[int]], diezPotencia:int):
+        for numero in estructura:
             colasDigitos[self.__calcularIndiceRadix(numero,diezPotencia)].agregar(numero)
 
     def __reorganizarVectorRadix(self, vector:Vector[int], colasDigitos:Vector[Cola[int]]):
@@ -781,6 +787,17 @@ class Ordenador:
             else:
                 vector[i] = colasDigitos[j].quitar()
                 i+=1
+
+    def __reorganizarListaRadix(self, lista:Lista[int], colasDigitos:Vector[Cola[int]]):
+        i = 0
+        lista.activarCursorInicio()
+
+        while lista.cursorPrendido():
+            if colasDigitos[i].estaVacia():
+                i+=1
+            else:
+                lista.setDatoCursor(colasDigitos[i].quitar())
+                lista.avanzarCursor()
 
     def radixSortVector(self, vector:Vector[int]):
         """# RADIX SORT
@@ -798,7 +815,7 @@ class Ordenador:
             -   **TypeError**: si el elemento ingresado no es un vector y no contiene enteros
         
         **complejidad**:
-            -   O(x+y) x: longitud de el vector, y: numero mas grande en el vector
+            -   O(x*y) x: longitud de el vector, y: cantidad de digitos del numero más grande
         """
         self.__validarVectorYContenido(int,vector)
         colasDigitos = self.__armarColas()
@@ -809,7 +826,36 @@ class Ordenador:
             self.__reorganizarVectorRadix(vector,colasDigitos)
             digito*=DIGITOS
 
+    def radixSortLista(self, lista:Lista[int]):
+        """# RADIX SORT
+        
+        ## Lista
+        Dada una lista de numeros enteros positivos (de preferencia, todos con una cantidad de
+        digitos más pequeña que la cantidad de elementos de la lista) ordena cada uno de los nuemros 
+        digito por digito. Osea, primero ordena las unidades de cada numero,
+        luego las decenas, luego las centenas, y así sucesivamente
+
+        **parameters**  
+            -   lista (Lista[int]): Enteros positivos
+
+        **excepciones**
+            -   **TypeError**: si el elemento ingresado no es una lista y no contiene enteros
+        
+        **complejidad**:
+            -   O(x*y) x: longitud de la lista, y: cantidad de digitos del numero más grande
+        """
+        self.__validarListaYContenido(int, lista)
+        colasDigitos = self.__armarColas()
+        digito = 1
+        while digito < max(lista):
+            self.__colaNumeros(lista,colasDigitos,digito)
+            self.__reorganizarListaRadix(lista,colasDigitos)
+            digito*=DIGITOS
+
     #BUCKET SORT
+
+    #ALGORITMOS DE BROMA
+
     #BOGO SORT
     def bogoSortVector(self, vector:Vector):
         """# BOGO SORT
@@ -881,16 +927,19 @@ class Ordenador:
         **excepciones**
             -   **TypeError**: si el elemento ingresado no es un vector
             -   **Incomparable**: si el tipo de datos de el vector no es comparables
-            -   **RecursionError**: se activará tarde o temprano. Si es que no ocurre el milagro de que se ordene el vector magicamente
+            -   **RecursionError**: si a Sorti no le pintó ordenar el vector
             -   **KeyboardInterruption**: si es que se te termina la paciencia de tanto esperar que Sorti te ordene el vector
             
         **complejidad**:
             -   infinito
         """
-        ordenado = self.vectorOrdenado(vector)
+        try:
+            ordenado = self.vectorOrdenado(vector)
 
-        while not ordenado:
-            ordenado = self.vectorOrdenado()
+            while not ordenado:
+                ordenado = self.vectorOrdenado(vector)
+        except KeyboardInterrupt:
+            raise MalditoHereje("COMO TE ATREVEZ A DESAFIAR A SORTI")
 
     #STALIN SORT
     def stalinSortLista(self, lista:Lista):

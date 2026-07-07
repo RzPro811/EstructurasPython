@@ -1,12 +1,10 @@
-from Estructuras.Ordenador import Ordenador
-from Estructuras.Lista import Lista, Vector
-from matplotlib import pyplot as plt, animation
+from src.Estructuras.Ordenador import Ordenador
+from src.Estructuras.Lista import Lista, Vector
 from random import randint
-import numpy as np
 
 orden = Ordenador()
-lista:Vector = orden.generarVectorNumRandom(40)
+lista:Lista = orden.generarListaNumRandom(40)
 
 print(lista)
-orden.quickSort(lista)
+orden.radixSortLista(lista)
 print(lista)

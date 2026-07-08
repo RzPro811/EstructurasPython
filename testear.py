@@ -1,13 +1,10 @@
-from src.Estructuras.Algebra import VectorAlgebraico, MatrizAlgebraica
-from src.Estructuras.Grafo import Grafo
+from Estructuras.Grafo import Grafo
 
+grafo1 = Grafo.generarGrafoCircuito({1,2,3})
+grafo2 = Grafo.generarGrafoPath({7,8,9})
 
-grafo = Grafo(int, str)
+gr = Grafo.union(grafo1,grafo2)
 
-grafo.agregarVertice(1)
-grafo.agregarVertice(2)
-grafo.conectarVertices(1,2,"camino")
-grafo.agregarVertice(3)
-grafo.conectarVertices(2,3)
+print(gr.esConexo())
 
-grafo.visualizar()
+gr.visualizar()

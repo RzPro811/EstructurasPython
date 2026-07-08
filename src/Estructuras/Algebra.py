@@ -1,5 +1,5 @@
 from .Vector import Vector, Matriz, PRIMERA_POSCICION
-from .Validaciones import validarTipoObjeto, validarCondicion, validarRango,validarValorObligatorio, FalloValidacion
+from .Validaciones import validarTipoObjeto, validarCondicion, validarRango,validarValorObligatorio, FalloValidacion, validarNoNegativo
 from .Excepciones.Algebraicos import *
 
 class VectorAlgebraico:
@@ -71,6 +71,18 @@ class VectorAlgebraico:
 
         validarCondicion(vector1.getDimension() != vector2.getDimension(), 
                          "Ingrese dos vectores con la misma dimension", DimensionIncompatibleError)
+
+    #METODOS ESTATICOS
+    def convertirEnAlgebraico(vector:Vector[int|float]) -> VectorAlgebraico:
+        validarTipoObjeto(Vector, vector, "Inresa un Vector")
+        validarCondicion(not issubclass(vector.getType(), int) and not issubclass(vector.getType(), float),
+                         "Inregse un vector con valores numericos", TypeError)
+        
+        algebraico = []
+        for elemento in vector:
+            algebraico.append(elemento)
+
+        return VectorAlgebraico(*algebraico, permitirFloat= vector.getType() is float)
 
     #OPERACIONES
 
@@ -171,6 +183,23 @@ class MatrizAlgebraica:
     
     def esCuadarada(self):
         return self.__matriz.esCuadrada()
+    
+    def tieneElNumero(self, num:int|float) -> bool:
+        if type(num) is float and not self.tieneFloat(): return False
+
+        encontrado = False
+        i = 0
+
+        while not encontrado and (i < self.getDimensionColumna()):
+            j = 0
+            while not encontrado and (j < self.getDimensionFila()):
+                if self.getItem(i,j) == num:
+                    encontrado = True
+                else:
+                    j+=1
+            i+=1
+
+        return encontrado
 
     #METODOS INTERNOS
     #VALIDACIONES
@@ -188,8 +217,6 @@ class MatrizAlgebraica:
                 validarValorObligatorio(fila.getDimension(),anteriorFila.getDimension(),
                                         "Todas las filas deben tener la misma dimension", DimensionIncompatibleError)
             
-    
-
     @staticmethod
     def validarMatriz(matriz:MatrizAlgebraica):
         validarTipoObjeto(MatrizAlgebraica,matriz, "Ingrese una matriz algebráica")
@@ -203,6 +230,35 @@ class MatrizAlgebraica:
         
         validarValorObligatorio(matriz1.getDimensionColumna(),matriz2.getDimensionColumna(),
                                 "Esta operacion requiere que ambas matrices tengan las mismas dimensiones", DimensionIncompatibleError)
+
+    @staticmethod
+    def convertirAlgebraico(matriz:Matriz) ->MatrizAlgebraica:
+        validarTipoObjeto(Matriz, matriz, "Inresa un Vector")
+        validarCondicion(not issubclass(matriz.getType(), int) and not issubclass(matriz.getType(), float),
+                         "Inregse un vector con valores numericos", TypeError)
+        conversion = []
+
+        for i in range(matriz.getLongitudColu()):
+            conversion.append(
+                VectorAlgebraico.convertirEnAlgebraico(
+                    matriz.getFila(i)
+                )
+            )
+
+        return MatrizAlgebraica(*conversion, permtirFloat=matriz.getType() is float)
+
+    @staticmethod
+    def generarIdentidad(dimension:int):
+        identidad = Matriz(int, dimension, dimension)
+
+        for i in range(dimension):
+            for j in range(dimension):
+                if i == j:
+                    identidad.setItem(i,j,1)
+                else:
+                    identidad.setItem(i,j,0)
+
+        return MatrizAlgebraica.convertirAlgebraico(identidad) 
 
     #OPERACIONES
     def __add__(self, other:MatrizAlgebraica) -> MatrizAlgebraica:
@@ -241,10 +297,58 @@ class MatrizAlgebraica:
 
     def __sub__(self, other:MatrizAlgebraica):
         return self + (-other)
-        
     
+    def pow(self, exp:int):
+        validarTipoObjeto(int, exp, "Inrese un exponente entero")
+        validarNoNegativo(exp,True,"El exponente debe ser positivo o cero")
+
+        if exp == 0:
+            return MatrizAlgebraica.generarIdentidad(self.getDimensionFila())
+
+        return MatrizAlgebraica.productoMatricial(
+            self, self.pow(exp-1)
+        ) 
+        
+    @staticmethod
+    def productoMatricial(matriz1:MatrizAlgebraica, matriz2:MatrizAlgebraica) -> MatrizAlgebraica:
+        validarValorObligatorio(matriz1.getDimensionFila(), matriz2.getDimensionColumna(), 
+                "La dimension de la fila de la primera matriz debe ser igual que la dimension de las columnas de la segunda matriz", DimensionIncompatibleError)
+        producto = []    
+
+        for i in range(matriz1.getDimensionColumna()):
+            fila = []
+            for j in range(matriz2.getDimensionFila()):
+                fila.append(
+                    VectorAlgebraico.productoEsc(matriz1.getFila(i),matriz2.getColumna(j),
+                    )
+                )
+
+            producto.append(VectorAlgebraico(*fila, permitirFloat= matriz1.tieneFloat() or matriz2.tieneFloat()))
+
+        return MatrizAlgebraica(*producto, permtirFloat= matriz1.tieneFloat() or matriz2.tieneFloat())
+
+    @staticmethod
+    def productoInterno(matriz1:MatrizAlgebraica, matriz2:MatrizAlgebraica):
+        MatrizAlgebraica.validarOperaciones(matriz1,matriz2)
+        return MatrizAlgebraica.productoMatricial(matriz1, matriz2.getTraspuesta()).getTraza()
 
     #GETTERS
+    def __getSubmatriz(self, filaDejada:int, columnaDejada:int) -> MatrizAlgebraica:
+        submatriz = []
+
+        for i in range(self.getDimensionFila()):
+            if i != filaDejada:
+                fila = []
+                
+                for j in range(self.getDimensionFila()):
+                    if j != columnaDejada:
+                        fila.append(self.getItem(i,j))
+                
+                submatriz.append(VectorAlgebraico(*fila,permitirFloat=self.__permitirFloat))
+
+        return MatrizAlgebraica(*submatriz, permtirFloat= self.__permitirFloat)
+    
+
     def getTraza(self):
         validarCondicion(not self.esCuadarada(), "La traza solo funciona para matrices cuadradas", DimensionIncompatibleError)
 
@@ -268,10 +372,19 @@ class MatrizAlgebraica:
         return MatrizAlgebraica(*traspuesta, permtirFloat= self.tieneFloat())
 
     def getDeterminante(self) -> int|float:
-        validarCondicion(self.esCuadarada(), "El determinante solo funciona para matrices cuadradas", DimensionIncompatibleError)
+        validarCondicion(not self.esCuadarada(), "El determinante solo funciona para matrices cuadradas", DimensionIncompatibleError)
 
         if self.getDimensionColumna() == 1:
-            return self.getItem(1,1)
+            return self.getItem(PRIMERA_POSCICION, PRIMERA_POSCICION)
+
+        signoCoeficiente = 1
+        determinante = 0
+
+        for i in range(self.getDimensionFila()):
+            determinante += signoCoeficiente * self.getItem(PRIMERA_POSCICION,i) * self.__getSubmatriz(PRIMERA_POSCICION,i).getDeterminante()
+            signoCoeficiente*=-1
+
+        return determinante
 
     def getItem(self, indice:int, jndice:int) -> int|float:
         return self.__matriz.getItem(indice,jndice)
@@ -282,5 +395,11 @@ class MatrizAlgebraica:
     def getDimensionColumna(self):
         return self.__matriz.getLongitudColu()
     
+    def getFila(self, i:int) -> VectorAlgebraico:
+        return VectorAlgebraico.convertirEnAlgebraico(self.__matriz.getFila(i))
+    
+    def getColumna(self, j:int) -> VectorAlgebraico:
+        return VectorAlgebraico.convertirEnAlgebraico(self.__matriz.getColumna(j))
+
     def getItem(self, i, j):
         return self.__matriz.getItem(i,j)

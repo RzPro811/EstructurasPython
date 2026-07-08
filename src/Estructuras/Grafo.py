@@ -1,11 +1,9 @@
 from .Validaciones import (TypeStruct, DataStruct, TypeVar, Generic, ValidarTipoUnico, validarValorCompatible, 
-                           validarCondicion, validarTipoObjeto, validarNoNegativo)
+                           validarCondicion, validarTipoObjeto)
 from .Excepciones.Grafo import *
 from .Excepciones.Generales import VacioError
 from .Algebra import Matriz, MatrizAlgebraica, PRIMERA_POSCICION
-from typing import Generator, Dict, Tuple, Optional
-import matplotlib.pyplot as plt
-import networkx as nx
+from typing import Generator
 
 V = TypeVar("V")
 E = TypeVar("E")
@@ -474,15 +472,16 @@ class Grafo(Generic[V,E]):
         return grafo
     
     @staticmethod
-    def generarGrafoInconexo(vertices:set[V]) -> Grafo[V,None]:
+    def generarGrafoInconexo(vertices:set[V], tipoAristas:type = None) -> Grafo[V,E]:
         """Dado un conjunto de vertices, genera un grafo inconexo, 
         es decir, un grafo cuyos vertices no estan conectados
         
         **parameters**
             -   vertices (set[V]): no vacío
+            -   tipoAristas (E): por defecto None
 
         **return**
-            -   (Grafo[V]): grafo inconexo
+            -   (Grafo[V,E]): grafo inconexo
 
         **excepciones**
             -   **TypeError**: si lo que se ingreso no fue un conjunto o si alguno de los elementos tiene un tipo de dato distinto
@@ -492,7 +491,7 @@ class Grafo(Generic[V,E]):
         validarValorCompatible(len(vertices),0,"Ingrese un set no vacio", VacioError)
         tipo = ValidarTipoUnico(vertices)
 
-        inconexo = Grafo(tipo)
+        inconexo = Grafo(tipo, tipoAristas)
 
         for elemento in vertices:
             inconexo.agregarVertice(elemento)
@@ -500,7 +499,7 @@ class Grafo(Generic[V,E]):
         return inconexo
     
     @staticmethod
-    def generarGrafoPath(vertices:set[V]): 
+    def generarGrafoPath(vertices:set[V], datoAristaInicial:E = None): 
         """Dado un conjunto de vertices, genera un grafo path, 
         es decir, un grafo cuyos vertices forman un camino con principio y fin
         
@@ -514,19 +513,22 @@ class Grafo(Generic[V,E]):
             -   **TypeError**: si lo que se ingreso no fue un conjunto o si alguno de los elementos tiene un tipo de dato distinto
             -   **VacioError**: si el conjunto está vacío
         """
-        path = Grafo.generarGrafoInconexo(vertices)
+        if datoAristaInicial is not None: tipoArista = type(datoAristaInicial)
+        else:   tipoArista = None
+
+        path = Grafo.generarGrafoInconexo(vertices, tipoArista)
 
         anterior = None
         for vertice in path:
             if anterior is not None:
-                path.conectarVertices(vertice, anterior)
+                path.conectarVertices(vertice, anterior, datoAristaInicial)
 
             anterior = vertice
 
         return path
 
     @staticmethod
-    def generarGrafoCircuito(vertices:set[V]): 
+    def generarGrafoCircuito(vertices:set[V], datoAristaInicial:E = None): 
         """Dado un conjunto de vertices, genera un grafo circuito, 
         es decir, un grafo cuyos vertices forman un camino euleriano hamiltoniano (un ciclo cerrado)
         
@@ -540,23 +542,25 @@ class Grafo(Generic[V,E]):
             -   **TypeError**: si lo que se ingreso no fue un conjunto o si alguno de los elementos tiene un tipo de dato distinto
             -   **VacioError**: si el conjunto está vacío
         """
-        circuito = Grafo.generarGrafoInconexo(vertices)
-
+        if datoAristaInicial is not None: tipoArista = type(datoAristaInicial)
+        else:   tipoArista = None
+        circuito = Grafo.generarGrafoInconexo(vertices, tipoArista)
+        
         primero = None
         anterior = None
         for vertice in circuito:
             if anterior is not None:
-                circuito.conectarVertices(vertice, anterior)
+                circuito.conectarVertices(vertice, anterior,datoAristaInicial)
             else: primero = vertice
 
             anterior = vertice
 
-        circuito.conectarVertices(vertice,primero)
+        circuito.conectarVertices(vertice,primero, datoAristaInicial)
 
         return circuito
 
     @staticmethod
-    def generarGrafoCompleto(vertices:set[V]):
+    def generarGrafoCompleto(vertices:set[V], datoAristaInicial:E = None):
         """Dado un conjunto de vertices, genera un grafo completo, 
         es decir, un grafo donde cada vertice estan conectados con todos los demas vertices
         
@@ -570,12 +574,14 @@ class Grafo(Generic[V,E]):
             -   **TypeError**: si lo que se ingreso no fue un conjunto o si alguno de los elementos tiene un tipo de dato distinto
             -   **VacioError**: si el conjunto está vacío
         """
-        completo = Grafo.generarGrafoInconexo(vertices)
+        if datoAristaInicial is not None: tipoArista = type(datoAristaInicial)
+        else:   tipoArista = None
+        completo = Grafo.generarGrafoInconexo(vertices, tipoArista)
 
         for vertice1 in completo:
             for vertice2 in completo:
                 if (vertice1 != vertice2) and not completo.estaConectado(vertice1,vertice2):
-                    completo.conectarVertices(vertice1,vertice2)
+                    completo.conectarVertices(vertice1,vertice2,datoAristaInicial)
 
         return completo
 
@@ -583,6 +589,22 @@ class Grafo(Generic[V,E]):
 
     #GETTERS
 
+    #internos
+    def __getAdyacencia(self, vertice1:V, vertice2:V) -> E:
+        """Dado dos vertices conectados, devueve e dato almacenado en la arista
+        
+        **parameters**
+            -   vertice1 (V)
+            -   vertice2 (V)
+
+        **return**
+            -   (E) elemento almacenado en la arista correspondiente
+        """
+        return self.__aristas.getItem(
+            self.__indiceVertice(vertice1),
+            self.__indiceVertice(vertice2)
+        )
+    
     #Calculables
     def getCantidadVertices(self) -> int:
         """Obtiene la cantidad de vertices
@@ -683,189 +705,112 @@ class Grafo(Generic[V,E]):
         self.__tipoE = TypeStruct(tipoAristas)
 
     #VISUALIZAR
+
+
     def visualizar(self):
         try:
+            from matplotlib import pyplot as plt
+            from matplotlib.backend_bases import MouseEvent
+            from matplotlib.axes import Axes
             import networkx as nx
-            import matplotlib.pyplot as plt
-        except Exception:
-            raise ImportError("Instale networkx y matplotlib para usar este metodo") 
-
-        G = nx.Graph()
+        except ImportError:
+            raise ImportError("Instala Numpy y Mathplotlib") 
         
-        self.__crearVisuales(G)
+        DISTANCIA_ACEPTADA = 0.25
+        MARGEN = 0.5
+        nodoSeleccionado = None
+        
+        def dibujarGrafo(G:nx.Graph, pos:dict[str, tuple[float, float]], ax:Axes):    
+            nx.draw(
+                G, pos = pos, ax= ax,
+                with_labels=True,
+                node_size=1200,
+                node_color= "skyblue",
+                edge_color= "black",
+                font_size= 12,
+            )
+            if self.esPesado():
+                nx.draw_networkx_edge_labels(G, pos, edge_labels= etiquetarAristas(), ax= ax)
+
+        def redibujar(G:nx.Graph, pos:dict[str, tuple[float, float]], ax:Axes,xLim:tuple[float, float], yLim:tuple[float, float]):
+            ax.cla()
+            dibujarGrafo(G, pos, ax)
+            ax.set_xlim(min(xLim) - MARGEN, max(xLim) + MARGEN)
+            ax.set_ylim(min(yLim) - MARGEN, max(yLim) + MARGEN)
+            ax.figure.canvas.draw_idle()
+
+        def etiquetarAristas():
+            etiquetas = {}
+
+            for vertice1 in self:
+                for vertice2 in self:
+                    if self.estaConectado(vertice1, vertice2) and (vertice2, vertice1) not in etiquetas:
+                        etiquetas.update({(vertice1, vertice2):self.__getAdyacencia(vertice1, vertice2)})
+            
+            return etiquetas
+        
+
+        def registrarAristas(G:nx.Graph):        
+            for vertice1 in self.__vertices:
+                G.add_node(vertice1)
+                for vertice2 in self.__vertices:
+                    if self.estaConectado(vertice1, vertice2) and (vertice2, vertice1):
+                        G.add_edge(vertice1,vertice2)
+
+        def distanciaEuleriana(x1:float, y1:float, x2:float, y2:float) -> float:
+            return ((x1-x2)**2 + (y1-y2)**2)**(1/2)
+
+        def calcularDistanciaNodo(pos:dict[str, tuple[float, float]], xCord:float, yCord:float) -> float:
+            for nodo in pos:
+                xPos, yPos = pos[nodo]
+                if None not in (xCord,yCord):
+                    if distanciaEuleriana(xPos,yPos,xCord, yCord) <= DISTANCIA_ACEPTADA:
+                        return nodo
+                    
+            return None
+            
+        def onPress(evento:MouseEvent, pos:dict[str, float]):
+            nonlocal nodoSeleccionado
+            nodoSeleccionado = calcularDistanciaNodo(pos, evento.xdata, evento.ydata)
+
+        def onMove(evento:MouseEvent, G:nx.Graph, pos:dict[str, tuple[float, float]], ax:Axes, 
+                xLim:tuple[float, float], yLim:tuple[float, float]):
+            nonlocal nodoSeleccionado
+
+            coordenadas = (evento.xdata,evento.ydata)
+
+            if (nodoSeleccionado is not None) and (None not in coordenadas):
+                pos[nodoSeleccionado] = coordenadas
+
+            redibujar(G, pos, ax, xLim, yLim)
+
+        def onRelease(evento:MouseEvent):
+            nonlocal nodoSeleccionado
+            nodoSeleccionado = None
+
+        G  = nx.Graph()
+
+        registrarAristas(G)
+
+        fig, ax = plt.subplots()
+
         pos = nx.spring_layout(G)
 
-        nx.draw(
-            G, pos,
-            with_labels= True,
-            node_color="#04cec4", node_size=1500,
-            edge_color="#000000"
-        )
+        xLim = [x for x, y in pos.values()]
+        yLim = [y for x, y in pos.values()]
         
+        ax.set_autoscale_on(False)
+        ax.set_xlim(min(xLim) - MARGEN, max(xLim) + MARGEN)
+        ax.set_ylim(min(yLim) - MARGEN, max(yLim) + MARGEN)
+
+        fig.canvas.mpl_connect("button_press_event", lambda evento: onPress(evento, pos))
+        fig.canvas.mpl_connect("motion_notify_event", lambda evento: onMove(evento, G, pos, ax, xLim, yLim))
+        fig.canvas.mpl_connect("button_release_event", onRelease)
+        
+        dibujarGrafo(G, pos, ax)
+
         plt.show()
 
-    def __crearVisuales(self, visual:nx.Graph):
-        for vertice in self:
-            visual.add_node(vertice)
-        visual.add_edges_from(self.__visualizarConexiones(visual))
-
-    def __visualizarConexiones(self,visual:nx.Graph):
-        conexiones = {}
-
-        for vertice1 in self:
-            for vertice2 in self:
-                if self.estaConectado(vertice1,vertice2) and ((vertice2, vertice1) not in conexiones.keys()):
-                    conexiones.update(
-                        {(vertice1,vertice2):self.__etiquetaArista(vertice1,vertice2)}
-                    )
-
-        return conexiones 
-
-    #lo hecho por la IA
-    def verGrafo(self, tamanioVertices: int = 1800, mostrar: bool = True) -> None:
-        """Genera y muestra una visualización interactiva del grafo.
-
-        Args:
-            tamanioVertices (int): Tamaño de los nodos en la visualización.
-            mostrar (bool): Si es True, muestra la ventana. Si es False, solo prepara la figura.
-        """
-        try:
-            import networkx as nx
-            import matplotlib.pyplot as plt
-        except Exception as error:
-            raise ImportError("Instale networkx y matplotlib para usar este metodo") from error
-
-        self.__crearVisualizacion(tamanioVertices)
-        self.__dibujarVisualizacion()
-        self.__configurarInteraccion()
-
-        if mostrar:
-            plt.show()
-
-    def __crearVisualizacion(self, tamanioVertices: int) -> None:
-        """Prepara la estructura interna necesaria para dibujar el grafo."""
-        self.__tamanioVertices = tamanioVertices
-        self.__grafoVisualizacion = nx.Graph()
-        self.__grafoVisualizacion.add_nodes_from(self.getVertices())
-        self.__etiquetasAristas: Dict[Tuple[V, V], str] = {}
-
-        for vertice1 in self:
-            for vertice2 in self:
-                if self.estaConectado(vertice1, vertice2) and ((vertice2, vertice1) not in self.__grafoVisualizacion.edges):
-                    self.__grafoVisualizacion.add_edge(vertice1, vertice2)
-                    self.__etiquetasAristas[(vertice1, vertice2)] = self.__etiquetaArista(vertice1, vertice2)
-
-        self.__posicionVisualizacion: Dict[V, Tuple[float, float]] = {}
-        posiciones = nx.circular_layout(self.__grafoVisualizacion, scale=1.2)
-        for vertice in self:
-            self.__posicionVisualizacion[vertice] = posiciones[vertice]
-
-    def __dibujarVisualizacion(self) -> None:
-        """Dibuja el grafo en una ventana de Matplotlib."""
-        self.__figura, self.__eje = plt.subplots()
-        self.__eje.clear()
-        nx.draw(
-            self.__grafoVisualizacion,
-            pos=self.__posicionVisualizacion,
-            with_labels=True,
-            node_size=self.__tamanioVertices,
-            node_color="#4bd5e7",
-            edge_color="#000000",
-            width=1.5,
-            ax=self.__eje,
-        )
-
-        if self.__etiquetasAristas:
-            nx.draw_networkx_edge_labels(
-                self.__grafoVisualizacion,
-                pos=self.__posicionVisualizacion,
-                edge_labels=self.__etiquetasAristas,
-                ax=self.__eje,
-                font_size=9,
-            )
-
-        self.__eje.set_title("Grafo")
-        self.__figura.canvas.draw_idle()
-
-    def __configurarInteraccion(self) -> None:
-        """Registra los eventos de ratón para permitir mover los nodos."""
-        self.__nodoSeleccionado: Optional[V] = None
-        self.__figura.canvas.mpl_connect("button_press_event", self.__alHacerClick)
-        self.__figura.canvas.mpl_connect("motion_notify_event", self.__alMoverRaton)
-        self.__figura.canvas.mpl_connect("button_release_event", self.__alSoltarClick)
-
-    def __alHacerClick(self, evento: object) -> None:
-        """Selecciona un nodo cuando el usuario hace clic sobre él."""
-        if getattr(evento, "inaxes", None) is None:
-            return
-        if getattr(evento, "xdata", None) is None or getattr(evento, "ydata", None) is None:
-            return
-
-        for nodo, posicion in self.__posicionVisualizacion.items():
-            distancia = (evento.xdata - posicion[0]) ** 2 + (evento.ydata - posicion[1]) ** 2
-            if distancia < 0.1:
-                self.__nodoSeleccionado = nodo
-                return
-
-        self.__nodoSeleccionado = None
-
-    def __alMoverRaton(self, evento: object) -> None:
-        """Actualiza la posición del nodo seleccionado mientras se arrastra."""
-        if self.__nodoSeleccionado is None:
-            return
-        if getattr(evento, "inaxes", None) is None:
-            return
-        if getattr(evento, "xdata", None) is None or getattr(evento, "ydata", None) is None:
-            return
-
-        self.__posicionVisualizacion[self.__nodoSeleccionado] = (evento.xdata, evento.ydata)
-        self.__eje.clear()
-        nx.draw(
-            self.__grafoVisualizacion,
-            pos=self.__posicionVisualizacion,
-            with_labels=True,
-            node_size=self.__tamanioVertices,
-            node_color="#4bd5e7",
-            edge_color="#000000",
-            width=1.5,
-            ax=self.__eje,
-        )
-
-        if self.__etiquetasAristas:
-            nx.draw_networkx_edge_labels(
-                self.__grafoVisualizacion,
-                pos=self.__posicionVisualizacion,
-                edge_labels=self.__etiquetasAristas,
-                ax=self.__eje,
-                font_size=9,
-            )
-
-        self.__eje.set_title("Grafo")
-        self.__figura.canvas.draw_idle()
-
-    def __alSoltarClick(self, evento: object) -> None:
-        """Deselecciona el nodo cuando el usuario suelta el botón del ratón."""
-        self.__nodoSeleccionado = None
-
-    def __etiquetaArista(self, vertice1: V, vertice2: V) -> str:
-        """Devuelve la etiqueta visible para una arista.
-
-        Si la arista tiene datos asociados, se muestran como texto. Si no,
-        se devuelve una cadena vacía para no mostrar nada.
-        """
-        
-        if not self.esPesado():
-            return ""
-
-        dato = self.__aristas.getItem(
-            self.__indiceVertice(vertice1),
-            self.__indiceVertice(vertice2)
-        )
-
-        return str(dato)
-
-
- 
 
 #Digrafo ------------------------------------------------------------------------------------------------------
 class Digrafo(Grafo,Generic[V,E]):

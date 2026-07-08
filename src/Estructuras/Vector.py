@@ -208,13 +208,11 @@ class Vector(Generic[T], TypeStruct):
         
         **excepciones**
             -   **TypeError** si lo ingresado no es un vector o el tipo de dato del contenido es distinto
-            -   **VacioError** si el vector ingresado no está vacio
             -   **ImplosionError** si el vector ingresado mide menos de lo que mide este vector
         """
         validarTipoObjeto(Vector, vector, "Ingresa un vector")
         validarCondicion(vector.getType() is not self.getType(), 
                          "Ingresa un vector con el mismo tipo de dato", TypeError)
-        validarCondicion(not vector.estaVacio(), "Ingresa un vector vacio", VacioError)
         validarMayorQue(vector.getLongitud(), self.getLongitud(), True, 
                         "Ingrese un vector con la misma longitud o mayor que este vector", ImplosionError)
         

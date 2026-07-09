@@ -278,9 +278,9 @@ class Cursor(TypeStruct,Generic[T]):
         Nodo.conectarNodos(nodo.getAnterior(), nodo.getSiguiente())
         
         if nodo.getSiguiente() is None:
-            self.avanzarNodo()
-        else:
             self.retrocederNodo()
+        else:
+            self.avanzarNodo()
 
         Nodo.desconectarNodo(nodo)
 

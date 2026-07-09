@@ -1,9 +1,11 @@
 from .Lista import Vector, Lista, T
 from .NoLineales import Heap, Cola, PRIMERA_POSCICION
-from .Validaciones import validarTipoObjeto, validarMayorQue, validarOrden, validarVariosTipos
+from .Validaciones import validarTipoObjeto, validarMayorQue, validarOrden, validarNoNegativo
 from .Excepciones.Ordenador import*
 from random import randint
+from matplotlib import pyplot as plt
 
+LARGO_VISUALIZACION = 20
 DIGITOS = 10
 MINIMO_RANDOM = 1
 MAXIMO_RANDOM = 1000
@@ -1018,10 +1020,9 @@ class Ordenador:
         lista.avanzarCursor()
 
         while lista.cursorPrendido():
-            print(lista)
-            print(lista.getDatoCursor())
             if self.__esMenor(lista.getDatoCursor(),lista.getAnteriorCursor()):
                 lista.extirparCursor()
-            lista.avanzarCursor()
+            else:
+                lista.avanzarCursor()
 
-        lista.desactivarCursor()
+

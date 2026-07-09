@@ -1,13 +1,13 @@
 from .Lista import Vector, Lista, T
 from .NoLineales import Heap, Cola, PRIMERA_POSCICION
-from .Validaciones import validarTipoObjeto, validarMayorQue, validarOrden
+from .Validaciones import validarTipoObjeto, validarMayorQue, validarOrden, validarVariosTipos
 from .Excepciones.Ordenador import*
 from random import randint
 
 DIGITOS = 10
 MINIMO_RANDOM = 1
 MAXIMO_RANDOM = 1000
-
+CANTIDAD_BALDES = 5
 
 class Ordenador:
     """ # ORDENADOR
@@ -853,6 +853,56 @@ class Ordenador:
             digito*=DIGITOS
 
     #BUCKET SORT
+    def __crearBaldes(self, tipoDatos:type, cantidad:int) -> Vector[Heap[T]]:
+        baldes = Vector(Heap, cantidad)
+        
+        for i in range(cantidad):
+            baldes[i] = Heap(tipoDatos)
+        
+        return baldes 
+
+    def __organizarBaldesInt(self, estructura:Vector[int]|Lista[int], baldes:Vector[Heap[int]]):
+        minimo = min(estructura)
+        maximo = max(estructura)
+
+        for numero in estructura:
+            baldes[
+                ((numero - minimo) * CANTIDAD_BALDES) // (maximo - minimo +1)
+            ].agregar(numero)
+
+    def __organizarBaldesFloat(self, estructura:Vector[float]|Lista[float], baldes:Vector[Heap[float]]):
+            for decimal in estructura:
+                if (decimal < 0) or (decimal > 1): 
+                    raise ValueError("Este metodo solo funciona para flotantes entre 0 y 1")
+
+                baldes[int(decimal//0.1)].agregar(decimal)
+
+
+    def __ordenarBaldesVector(self, vector:Vector[T], baldes:Vector[Heap[T]]):
+        i, j = PRIMERA_POSCICION, PRIMERA_POSCICION
+
+        while i < vector.getLongitud():
+            if baldes[j].estaVacio():
+                j+=1
+            else:
+                vector[i] = baldes[j].quitar()
+                i+=1
+
+    def bucketSortVector(self, vector:Vector[int]):
+        self.__validarVector(vector)
+        baldes:Vector[Heap[int]]
+
+        if issubclass(vector.getType(), int):
+            baldes = self.__crearBaldes(int, CANTIDAD_BALDES)
+            self.__organizarBaldesInt(vector,baldes)
+        elif issubclass(vector.getType(), float):
+            baldes = self.__crearBaldes(float, DIGITOS) 
+            self.__organizarBaldesFloat(vector, baldes)
+        else:
+            raise TypeError("Ingrese un vector con enteros")
+
+        self.__ordenarBaldesVector(vector, baldes)
+
 
     #ALGORITMOS DE BROMA
 

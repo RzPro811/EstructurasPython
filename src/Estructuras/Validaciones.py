@@ -98,6 +98,23 @@ def ValidarTipoUnico(iterable, mensaje:str = "Ingresa una lista de elementos del
 
     return tipo
 
+def validarVariosTipos(objeto:T, *tipos:type, mensaje:str = None, error:Exception = TypeError):
+    """"""
+    validarError(error)
+    mensaje = crearMensaje("El objeto inresado no es de ningun tipo ingresado",mensaje)
+    validarTipoObjeto(tipos[0], type, "Ingresa tipos de objetos", FalloValidacion)
+    ValidarTipoUnico(tipos, "Inrgesa tipos de objetos", FalloValidacion)
+
+    lanzarError = True
+    i = 0
+    while (i < len(tipos)) and lanzarError:
+        lanzarError = not isinstance(objeto, tipos[i])
+        i+=1
+
+    if lanzarError:
+        raise error(mensaje)
+
+
     
 def validarNoNegativo(numero: int, incluyeCero:bool = True, mensaje:str = None, error:Exception = ValueError):
     """Valida que un numero ingresado no sea un valor negativo

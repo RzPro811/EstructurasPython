@@ -5,12 +5,25 @@ from .Excepciones.Generales import VacioError
 from .Algebra import Matriz, MatrizAlgebraica, PRIMERA_POSCICION
 from typing import Generator
 
+try:
+    from matplotlib import pyplot as plt
+    from matplotlib.backend_bases import MouseEvent
+    from matplotlib.axes import Axes
+    import networkx as nx
+except ImportError:
+    pass
+
 V = TypeVar("V")
 E = TypeVar("E")
 
 SIN_ADYACENCIA = 0
 ADYAENCIA = 1
 ANTIADYACENCIA = -1 
+DISTANCIA_ACEPTADA = 0.25
+MARGEN = 0.5
+
+
+nodoSeleccionado = None
 
 class Cursor(DataStruct, Generic[V]):
     pass
@@ -707,90 +720,81 @@ class Grafo(Generic[V,E]):
     #VISUALIZAR
 
 
-    def visualizar(self):
-        try:
-            from matplotlib import pyplot as plt
-            from matplotlib.backend_bases import MouseEvent
-            from matplotlib.axes import Axes
-            import networkx as nx
-        except ImportError:
-            raise ImportError("Instala Numpy y Mathplotlib") 
+    def __dibujarGrafo__(self, G:nx.Graph|nx.DiGraph, pos:dict[str, tuple[float, float]], ax:Axes):    
+        nx.draw(
+            G, pos = pos, ax= ax,
+            with_labels=True,
+            node_size=1200,
+            node_color= "skyblue",
+            edge_color= "black",
+            font_size= 12,
+        )
+        if self.esPesado():
+            nx.draw_networkx_edge_labels(G, pos, edge_labels= self.__etiquetarAristas(), ax= ax)
+
+    def __redibujar(self, G:nx.Graph, pos:dict[str, tuple[float, float]], ax:Axes,xLim:tuple[float, float], yLim:tuple[float, float]):
+        ax.cla()
+        self.__dibujarGrafo__(G, pos, ax)
+        ax.set_xlim(min(xLim) - MARGEN, max(xLim) + MARGEN)
+        ax.set_ylim(min(yLim) - MARGEN, max(yLim) + MARGEN)
+        ax.figure.canvas.draw_idle()
+
+    def __etiquetarAristas(self):
+        etiquetas = {}
+
+        for vertice1 in self:
+            for vertice2 in self:
+                if (self.estaConectado(vertice1, vertice2) and (vertice2, vertice1) not in etiquetas):
+                    etiquetas.update({(vertice1, vertice2):self.__getAdyacencia(vertice1, vertice2)})
         
-        DISTANCIA_ACEPTADA = 0.25
-        MARGEN = 0.5
+        return etiquetas
+    
+
+    def __registrarAristas__(self, G:nx.Graph):        
+        for vertice1 in self.__vertices:
+            G.add_node(vertice1)
+            for vertice2 in self.__vertices:
+                if self.estaConectado(vertice1, vertice2) and (vertice2, vertice1):
+                    G.add_edge(vertice1,vertice2)
+
+    def __distanciaEuleriana(self,x1:float, y1:float, x2:float, y2:float) -> float:
+        return ((x1-x2)**2 + (y1-y2)**2)**(1/2)
+
+    def __calcularDistanciaNodo(self,pos:dict[str, tuple[float, float]], xCord:float, yCord:float) -> float:
+        for nodo in pos:
+            xPos, yPos = pos[nodo]
+            if None not in (xCord,yCord):
+                if self.__distanciaEuleriana(xPos,yPos,xCord, yCord) <= DISTANCIA_ACEPTADA:
+                    return nodo
+                
+        return None
+        
+    def __onPress(self,evento:MouseEvent, pos:dict[str, float]):
+        global nodoSeleccionado
+        nodoSeleccionado = self.__calcularDistanciaNodo(pos, evento.xdata, evento.ydata)
+
+    def __onMove(self, evento:MouseEvent, G:nx.Graph, pos:dict[str, tuple[float, float]], ax:Axes, 
+            xLim:tuple[float, float], yLim:tuple[float, float]):
+        global nodoSeleccionado
+        coordenadas = (evento.xdata,evento.ydata)
+
+        if (nodoSeleccionado is not None) and (None not in coordenadas):
+            pos[nodoSeleccionado] = coordenadas
+
+        self.__redibujar(G, pos, ax, xLim, yLim)
+
+    def __onRelease(self,evento:MouseEvent):
+        global nodoSeleccionado
         nodoSeleccionado = None
-        
-        def dibujarGrafo(G:nx.Graph, pos:dict[str, tuple[float, float]], ax:Axes):    
-            nx.draw(
-                G, pos = pos, ax= ax,
-                with_labels=True,
-                node_size=1200,
-                node_color= "skyblue",
-                edge_color= "black",
-                font_size= 12,
-            )
-            if self.esPesado():
-                nx.draw_networkx_edge_labels(G, pos, edge_labels= etiquetarAristas(), ax= ax)
 
-        def redibujar(G:nx.Graph, pos:dict[str, tuple[float, float]], ax:Axes,xLim:tuple[float, float], yLim:tuple[float, float]):
-            ax.cla()
-            dibujarGrafo(G, pos, ax)
-            ax.set_xlim(min(xLim) - MARGEN, max(xLim) + MARGEN)
-            ax.set_ylim(min(yLim) - MARGEN, max(yLim) + MARGEN)
-            ax.figure.canvas.draw_idle()
+    def __crearGrafoNx__(self):
+        return nx.Graph()
 
-        def etiquetarAristas():
-            etiquetas = {}
+    def visualizar(self):
 
-            for vertice1 in self:
-                for vertice2 in self:
-                    if self.estaConectado(vertice1, vertice2) and (vertice2, vertice1) not in etiquetas:
-                        etiquetas.update({(vertice1, vertice2):self.__getAdyacencia(vertice1, vertice2)})
-            
-            return etiquetas
-        
+        G = self.__crearGrafoNx__()
 
-        def registrarAristas(G:nx.Graph):        
-            for vertice1 in self.__vertices:
-                G.add_node(vertice1)
-                for vertice2 in self.__vertices:
-                    if self.estaConectado(vertice1, vertice2) and (vertice2, vertice1):
-                        G.add_edge(vertice1,vertice2)
-
-        def distanciaEuleriana(x1:float, y1:float, x2:float, y2:float) -> float:
-            return ((x1-x2)**2 + (y1-y2)**2)**(1/2)
-
-        def calcularDistanciaNodo(pos:dict[str, tuple[float, float]], xCord:float, yCord:float) -> float:
-            for nodo in pos:
-                xPos, yPos = pos[nodo]
-                if None not in (xCord,yCord):
-                    if distanciaEuleriana(xPos,yPos,xCord, yCord) <= DISTANCIA_ACEPTADA:
-                        return nodo
-                    
-            return None
-            
-        def onPress(evento:MouseEvent, pos:dict[str, float]):
-            nonlocal nodoSeleccionado
-            nodoSeleccionado = calcularDistanciaNodo(pos, evento.xdata, evento.ydata)
-
-        def onMove(evento:MouseEvent, G:nx.Graph, pos:dict[str, tuple[float, float]], ax:Axes, 
-                xLim:tuple[float, float], yLim:tuple[float, float]):
-            nonlocal nodoSeleccionado
-
-            coordenadas = (evento.xdata,evento.ydata)
-
-            if (nodoSeleccionado is not None) and (None not in coordenadas):
-                pos[nodoSeleccionado] = coordenadas
-
-            redibujar(G, pos, ax, xLim, yLim)
-
-        def onRelease(evento:MouseEvent):
-            nonlocal nodoSeleccionado
-            nodoSeleccionado = None
-
-        G  = nx.Graph()
-
-        registrarAristas(G)
+        self.__registrarAristas__(G)
 
         fig, ax = plt.subplots()
 
@@ -803,11 +807,11 @@ class Grafo(Generic[V,E]):
         ax.set_xlim(min(xLim) - MARGEN, max(xLim) + MARGEN)
         ax.set_ylim(min(yLim) - MARGEN, max(yLim) + MARGEN)
 
-        fig.canvas.mpl_connect("button_press_event", lambda evento: onPress(evento, pos))
-        fig.canvas.mpl_connect("motion_notify_event", lambda evento: onMove(evento, G, pos, ax, xLim, yLim))
-        fig.canvas.mpl_connect("button_release_event", onRelease)
+        fig.canvas.mpl_connect("button_press_event", lambda evento: self.__onPress(evento, pos))
+        fig.canvas.mpl_connect("motion_notify_event", lambda evento: self.__onMove(evento, G, pos, ax, xLim, yLim))
+        fig.canvas.mpl_connect("button_release_event", self.__onRelease)
         
-        dibujarGrafo(G, pos, ax)
+        self.__dibujarGrafo__(G, pos, ax)
 
         plt.show()
 
@@ -830,11 +834,11 @@ class Digrafo(Grafo,Generic[V,E]):
         
     #METODOS DE CLASE
 
-    def conectarVertices(self, vertice1, vertice2, coneccion = None, peso = None):
-        super().__conectarVertices__(vertice1, vertice2, ADYAENCIA, coneccion, peso)
+    def conectarVertices(self, vertice1, vertice2, coneccion = None):
+        super().__conectarVertices__(vertice1, vertice2, ADYAENCIA, coneccion)
 
     def desconectarVertices(self, vertice1, vertice2):
-        super().__conectarVertices__(vertice1, vertice2, SIN_ADYACENCIA, None, SIN_ADYACENCIA)
+        super().__conectarVertices__(vertice1, vertice2, SIN_ADYACENCIA, None)
 
     #GETTERS
     
@@ -852,3 +856,26 @@ class Digrafo(Grafo,Generic[V,E]):
                     grafo.conectarVertices(vertice1, vertice2)
 
         return grafo
+    
+    def __crearGrafoNx__(self):
+        return nx.DiGraph()
+    
+    def __registrarAristas__(self, G:nx.DiGraph):
+        for vertice1 in self:
+            G.add_node(vertice1)
+            for vertice2 in self:
+                if self.estaConectado(vertice1, vertice2):
+                    G.add_edge(vertice1,vertice2)
+        
+    def __dibujarGrafo__(self, G, pos, ax):
+        nx.draw(
+            G, pos = pos, ax= ax,
+            with_labels=True,
+            node_size=1200,
+            node_color= "skyblue",
+            edge_color= "black",
+            font_size= 12,
+            arrows = True,
+        )
+        if self.esPesado():
+            nx.draw_networkx_edge_labels(G, pos, edge_labels= self.__etiquetarAristas(), ax= ax, arrows = True)

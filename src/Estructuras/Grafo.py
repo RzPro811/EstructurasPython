@@ -603,7 +603,7 @@ class Grafo(Generic[V,E]):
     #GETTERS
 
     #internos
-    def __getAdyacencia(self, vertice1:V, vertice2:V) -> E:
+    def getAdyacencia(self, vertice1:V, vertice2:V) -> E:
         """Dado dos vertices conectados, devueve e dato almacenado en la arista
         
         **parameters**
@@ -730,7 +730,7 @@ class Grafo(Generic[V,E]):
             font_size= 12,
         )
         if self.esPesado():
-            nx.draw_networkx_edge_labels(G, pos, edge_labels= self.__etiquetarAristas(), ax= ax)
+            nx.draw_networkx_edge_labels(G, pos, edge_labels= self.__etiquetarAristas__(), ax= ax)
 
     def __redibujar(self, G:nx.Graph, pos:dict[str, tuple[float, float]], ax:Axes,xLim:tuple[float, float], yLim:tuple[float, float]):
         ax.cla()
@@ -739,13 +739,13 @@ class Grafo(Generic[V,E]):
         ax.set_ylim(min(yLim) - MARGEN, max(yLim) + MARGEN)
         ax.figure.canvas.draw_idle()
 
-    def __etiquetarAristas(self):
+    def __etiquetarAristas__(self):
         etiquetas = {}
 
         for vertice1 in self:
             for vertice2 in self:
                 if (self.estaConectado(vertice1, vertice2) and (vertice2, vertice1) not in etiquetas):
-                    etiquetas.update({(vertice1, vertice2):self.__getAdyacencia(vertice1, vertice2)})
+                    etiquetas.update({(vertice1, vertice2):self.getAdyacencia(vertice1, vertice2)})
         
         return etiquetas
     
@@ -857,6 +857,8 @@ class Digrafo(Grafo,Generic[V,E]):
 
         return grafo
     
+    #VISUALIZACION
+
     def __crearGrafoNx__(self):
         return nx.DiGraph()
     
@@ -878,4 +880,16 @@ class Digrafo(Grafo,Generic[V,E]):
             arrows = True,
         )
         if self.esPesado():
-            nx.draw_networkx_edge_labels(G, pos, edge_labels= self.__etiquetarAristas(), ax= ax, arrows = True)
+            nx.draw_networkx_edge_labels(G, pos, edge_labels= self.__etiquetarAristas__(), ax= ax)
+
+    
+    def __etiquetarAristas__(self):
+        etiquetas = {}
+
+        for vertice1 in self:
+            for vertice2 in self:
+                if (self.estaConectado(vertice1, vertice2)):
+                    etiquetas.update({(vertice1, vertice2):self.getAdyacencia(vertice1, vertice2)})
+        
+        return etiquetas
+    

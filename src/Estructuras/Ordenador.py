@@ -3,7 +3,15 @@ from .NoLineales import Heap, Cola, PRIMERA_POSCICION
 from .Validaciones import validarTipoObjeto, validarMayorQue, validarOrden, validarNoNegativo
 from .Excepciones.Ordenador import*
 from random import randint
-from matplotlib import pyplot as plt
+
+visualizacion = True
+
+try:
+    from matplotlib import pyplot as plt
+    from matplotlib.container import BarContainer
+    from matplotlib.patches import Rectangle
+except ImportError as e:
+    visualizacion = False
 
 LARGO_VISUALIZACION = 20
 DIGITOS = 10
@@ -1025,4 +1033,262 @@ class Ordenador:
             else:
                 lista.avanzarCursor()
 
+#VISUALIZADOR
+TIEMPO_ENTRE_FRAMES = 0.0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001
 
+LONGITUD_CORTA = 40
+LONGITUD_LARGA = 200
+
+
+COMPARACION = "red"
+PIVOTE_QUICK = "cyan"
+ORDENADO = "green"
+FONDO = "black"
+OTRAS_BARRAS = "white"
+
+class Visualizador():
+    @staticmethod
+    def __iniciarAnimacion(longitud:int, titulo:str) -> tuple[Vector[int], BarContainer[Rectangle]]:
+        if visualizacion:
+            Visualizador.__validarLongitud(longitud)
+            vector = Visualizador.__cargarVector(longitud)
+            bars = Visualizador.__visualizador(vector, titulo) 
+            plt.ion()
+
+            return vector, bars
+        else:
+            raise ImportError("Instale Matplotlib para usar el visualizador")
+    
+    @staticmethod
+    def __configurarBarras(bars:BarContainer[Rectangle], vector:Vector[int], i:int, color:str):
+        bars[i].set_height(vector[i])
+        bars[i].set_color(color)
+
+    def __terminarAnimacion(bars:BarContainer, vector:Vector):
+        Visualizador.__terminarDePintar(bars, vector)
+        plt.ioff()
+        plt.show()
+    
+    @staticmethod
+    def __reiniciar(self):
+        pass
+
+    @staticmethod
+    def __cargarVector(cantidad:int) -> Vector[int]:
+        vector = Ordenador().generarVectorNumeros(cantidad)
+        vector.mezclar()
+
+        return vector
+
+    @staticmethod
+    def __validarLongitud(longitud:int):
+        validarTipoObjeto(int, longitud, "Ingrese una longitud entera")
+        validarNoNegativo(longitud, False, "Ingrese una longitud positiva")
+    
+    @staticmethod
+    def __visualizador(vector:Vector[int], titulo:str) -> BarContainer[Rectangle]:
+        fig, ax = plt.subplots()
+        bars = ax.bar(range(vector.getLongitud()), vector)
+        ax.axis("off")
+        fig.patch.set_facecolor(FONDO)
+        ax.set_title(titulo, color = OTRAS_BARRAS)
+
+        return bars
+
+    @staticmethod
+    def __terminarDePintar(bars:BarContainer, vector:Vector):
+        for i in range(vector.getLongitud()):    
+            bars[i].set_color(ORDENADO)
+            plt.pause(TIEMPO_ENTRE_FRAMES)
+
+    #BUBBLE SORT
+    @staticmethod
+    def __framesBubble(vector:Vector):
+        i = 0
+        terminado = False
+
+        while(i < vector.getLongitud() - 1) and not terminado:
+            terminado = True
+            for j in range(vector.getLongitud() - 1 - i):
+                if vector[j] > vector[j+1]:
+                    terminado = False
+                    vector.intercambiar(j, j+1)
+
+                yield i, j, j+1
+    
+            i+=1
+
+
+    @staticmethod
+    def verBubbleSort(longitud:int = LONGITUD_CORTA):
+        vector, bars = Visualizador.__iniciarAnimacion(longitud, "Bubble Sort")
+
+        for i, cmp1, cmp2 in Visualizador.__framesBubble(vector):
+            for j in range(vector.getLongitud()):
+                bars[j].set_height(vector[j])
+                if j > vector.getLongitud() -1 -i:
+                    color = ORDENADO
+                elif j in (cmp1, cmp2):
+                    color = COMPARACION
+                else:
+                    color = OTRAS_BARRAS
+                Visualizador.__configurarBarras(bars, vector, j, color)
+            plt.pause(TIEMPO_ENTRE_FRAMES)
+        
+        Visualizador.__terminarDePintar(bars, vector)
+        plt.ioff()
+        plt.show()
+
+    #SELECTION SORT
+    @staticmethod
+    def __framesSelection(vector:Vector[int]):
+        for i in range(vector.getLongitud()):
+            menor = i
+            for j in range(i, vector.getLongitud()):
+                yield i, j, menor
+                if vector[menor] > vector[j]:
+                    menor = j
+
+            vector.intercambiar(menor, i)
+
+    def verSelectionSort(longitud:int):
+        vector, bars = Visualizador.__iniciarAnimacion(longitud, "Selection Sort")
+
+        for inicio, cmp, menor in Visualizador.__framesSelection(vector):
+            for i in range(vector.getLongitud()):
+                if i in (menor, cmp):
+                    color = COMPARACION
+                elif i == inicio:
+                    color = PIVOTE_QUICK
+                elif i < inicio:
+                    color = ORDENADO
+                else:
+                    color = OTRAS_BARRAS
+                Visualizador.__configurarBarras(bars,vector,i,color)
+            plt.pause(TIEMPO_ENTRE_FRAMES) 
+
+        Visualizador.__terminarAnimacion(bars, vector)
+    
+    #INSERTION SORT
+    @staticmethod
+    def __framesInsertion(vector:Vector[int]):
+        for i in range(1,vector.getLongitud()):
+            j = i - 1
+            aux = vector[i]
+
+            while (j >= 0) and vector[j] > aux: 
+                vector.intercambiar(j, j+1)
+                j-=1
+
+                yield i, j, j+1
+
+    @staticmethod
+    def verInsertionSort(longitud:int):
+        vector, bars = Visualizador.__iniciarAnimacion(longitud, "Insertion Sort")
+
+        for pos, cmp1, cmp2 in Visualizador.__framesInsertion(vector):
+            for i in range(vector.getLongitud()):
+                color = OTRAS_BARRAS
+                if i < pos:
+                    color = ORDENADO
+                if i == pos:
+                    color = PIVOTE_QUICK 
+                if i in (cmp1, cmp2):
+                    color = COMPARACION
+                Visualizador.__configurarBarras(bars, vector, i, color)
+            plt.pause(TIEMPO_ENTRE_FRAMES)
+                
+        Visualizador.__terminarAnimacion(bars, vector)
+
+
+    #QUICK SORT
+    @staticmethod
+    def __framesQuickSort(vector:Vector, inicio:int, fin:int, pivotes:set[int]):
+        if fin > inicio:
+            i, j, piv = inicio, fin - 1, fin
+
+            while (i <= j):
+                if vector[j] > vector[piv]:
+                    vector.intercambiar(j, piv)
+                    j -=1
+                    piv -=1
+                else:
+                    vector.intercambiar(i,j)
+                    i+=1
+
+           
+                yield i, j, piv
+            pivotes.add(piv)
+
+            yield from Visualizador.__framesQuickSort(vector, inicio, piv - 1, pivotes)
+            yield from Visualizador.__framesQuickSort(vector, piv + 1, fin, pivotes)
+
+    @staticmethod
+    def verQuickSort(longitud:int = LONGITUD_LARGA):
+        vector, bars = Visualizador.__iniciarAnimacion(longitud, "Quick Sort")
+        pivotes = set({})
+
+        for inicio, fin, pivote in Visualizador.__framesQuickSort(vector, 0, vector.getLongitud()-1, pivotes):
+            
+            for j in range(vector.getLongitud()):
+                if j in pivotes:
+                    color = ORDENADO
+                elif j in (inicio, fin):
+                    color = COMPARACION
+                elif j == pivote:
+                    color = PIVOTE_QUICK
+                else:
+                    color = OTRAS_BARRAS
+                Visualizador.__configurarBarras(bars, vector, j, color)
+
+            plt.pause(TIEMPO_ENTRE_FRAMES)
+        
+        Visualizador.__terminarAnimacion(bars, vector)
+
+    #RADIX SORT
+    @staticmethod
+    def __generarColas():
+        colas = Vector(Cola, DIGITOS)
+        for i in range(DIGITOS):
+            colas[i] = Cola(int)
+        
+        return colas
+
+    @staticmethod
+    def __cargarCola(vector:Vector[int], colas:Vector[Cola[int]], digito:int):
+        for numero in vector:
+            colas[(numero // digito) % 10].agregar(numero)
+
+    @staticmethod
+    def __retornarAlRadix(vector:Vector[int], colas:Vector[Cola[int]]):
+        i,j  = 0, 0
+
+        for i in range(vector.getLongitud()):
+            if colas[j].estaVacia():
+                j+=1
+
+            vector[i] = colas[j].quitar()
+            i+=1
+
+    @staticmethod
+    def __framesRadix(vector:Vector):
+        colas = Visualizador.__generarColas()
+        diezPotencia = 1
+
+        while diezPotencia < max(vector):
+            Visualizador.__cargarCola(vector, colas, diezPotencia)
+            Visualizador.__retornarAlRadix(vector, colas)
+            yield OTRAS_BARRAS
+            diezPotencia *= 10
+
+
+    @staticmethod
+    def verRadixSort(longitud:int):
+        vector, bars = Visualizador.__iniciarAnimacion(longitud, "Radix Sort")
+        
+        for iteracion in Visualizador.__framesRadix(vector):
+            for i in range(vector.getLongitud()):
+                Visualizador.__configurarBarras(bars,vector,i, iteracion)
+
+                plt.pause(TIEMPO_ENTRE_FRAMES)
+        Visualizador.__terminarAnimacion(bars, vector)

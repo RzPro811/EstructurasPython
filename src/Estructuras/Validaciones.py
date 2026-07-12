@@ -188,13 +188,13 @@ def validarRango(valor:int, minimo:int, maximo:int, incluyeExtremos:bool = True,
         if (valor <= minimo) or (valor >= maximo):
             raise error(mensaje)
 
-def validarCondicion(condicion:bool, mensaje:str, error:Exception):
+def validarCondicion(condicion:bool, mensaje:str = None, error:Exception = RuntimeError):
     """Dada una condicion, si es verdadera, lanza error
     
     **parameters**
         -   **condicion** (bool): si es verdadero, lanza error
-        -   **mensaje** (str)
-        -   **error** (Exception)
+        -   **mensaje** (str): por defecto None
+        -   **error** (Exception): por defecto RuntimeError
 
     **excepciones**:
         -   **FalloValidacion**: si no se cumplen con las condiones previamente establecidas

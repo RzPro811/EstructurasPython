@@ -2,7 +2,7 @@ from .Validaciones import (TypeStruct, DataStruct, TypeVar, Generic, ValidarTipo
                            validarCondicion, validarTipoObjeto)
 from .Excepciones.Grafo import *
 from .Excepciones.Generales import VacioError
-from .Algebra import Matriz, MatrizAlgebraica, PRIMERA_POSCICION
+from .Algebra import Matriz, PRIMERA_POSCICION
 from typing import Generator
 
 try:

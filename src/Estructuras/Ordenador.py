@@ -1275,7 +1275,7 @@ class Visualizador():
         colas = Visualizador.__generarColas()
         diezPotencia = 1
 
-        while diezPotencia < max(vector):
+        while diezPotencia <= max(vector):
             Visualizador.__cargarCola(vector, colas, diezPotencia)
             Visualizador.__retornarAlRadix(vector, colas)
             yield OTRAS_BARRAS

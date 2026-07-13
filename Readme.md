@@ -92,3 +92,9 @@ Estas estructuras son heredables, diseñados para crear estructuras de datos de 
         -   ```getTypeName()```
         -   ```__validarEntrada__()```
         -   ```__validarEntradas__()```
+
+    #
+
+### 1. Vector
+
+Tipo de estructura lineal. Una terna de datos de principio a fin, almacenados en fila desde una poscicion hasta la ultima en algun lugar de la memoria.

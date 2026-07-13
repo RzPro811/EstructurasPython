@@ -50,18 +50,19 @@ Extras:
     -   **Visualizador**
     -   **TypeStruct**
     -   **DataStruct**
+    -   **Numerico**
     -   **FalloValidacion**
     -   **MalditoHereje**
 """
 
-
+from .Heredables import TypeStruct, DataStruct, Numerico
 from .Lista import Lista
 from .Vector import Vector, Matriz
 from .Grafo import Grafo, Digrafo
 from .Ordenador import Ordenador, Visualizador
 from .NoLineales import Cola, Pila, Heap
 from .Algebra import VectorAlgebraico, MatrizAlgebraica
-from .Validaciones import ( TypeStruct, DataStruct, FalloValidacion,
+from .Validaciones import (FalloValidacion,
     validarTipo,
     validarVariosTipos,
     ValidarTipoUnico,
@@ -96,6 +97,7 @@ __all__ = [
     "MatrizAlgebraica", 
     "TypeStruct", 
     "DataStruct",
+    "Numerico",
     "validarTipo",
     "validarVariosTipos",
     "ValidarTipoUnico",

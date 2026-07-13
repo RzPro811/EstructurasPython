@@ -1,5 +1,6 @@
-from .Validaciones import T, Generic, TypeStruct, validarTipoObjeto, validarRango, validarNoNegativo, validarCondicion, validarMayorQue
+from .Validaciones import T, Generic, validarTipoObjeto, validarRango, validarNoNegativo, validarCondicion, validarMayorQue
 from .Excepciones.Generales import *
+from .Heredables import TypeStruct
 from typing import Generator
 from random import shuffle
 

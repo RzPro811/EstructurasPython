@@ -1,4 +1,5 @@
-from .Validaciones import TypeStruct, Generic, T, validarCondicion
+from .Validaciones import Generic, T, validarCondicion
+from .Heredables import TypeStruct
 from .Vector import PRIMERA_POSCICION
 from .Excepciones.Generales import *
 from .Lista import Lista

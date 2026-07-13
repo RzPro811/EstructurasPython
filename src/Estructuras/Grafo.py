@@ -1,5 +1,6 @@
-from .Validaciones import (TypeStruct, DataStruct, TypeVar, Generic, ValidarTipoUnico, validarValorCompatible, 
+from .Validaciones import (TypeVar, Generic, ValidarTipoUnico, validarValorCompatible, 
                            validarCondicion, validarTipoObjeto)
+from .Heredables import TypeStruct, DataStruct
 from .Excepciones.Grafo import *
 from .Excepciones.Generales import VacioError
 from .Algebra import Matriz, PRIMERA_POSCICION

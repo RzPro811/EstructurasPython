@@ -1,5 +1,5 @@
 from .Vector import Vector, Matriz, PRIMERA_POSCICION
-from .Validaciones import validarTipoObjeto, validarCondicion, validarRango,validarValorObligatorio, FalloValidacion, validarNoNegativo
+from .Validaciones import validarTipoObjeto, validarCondicion, validarRango,validarValorObligatorio, validarNoNegativo
 from .Excepciones.Algebraicos import *
 
 class VectorAlgebraico:

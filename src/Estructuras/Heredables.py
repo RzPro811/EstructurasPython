@@ -170,21 +170,24 @@ class Numerico(ABC):
         """Todo numero debe tener Multiplicacion"""
         pass
 
-    def __neg__(self):
-        return (-1) * self
-    
-    def __sub__(self, other:Numerico):
-        return self + (- other)        
-
     @abstractmethod
-    def __truediv__(self, other):
-        """Todo numero se debe de poder dividir"""
+    def __pow__(self, exp):
+        """Todo numero debe tener Potencias"""
         pass
 
     @abstractmethod
     def __eq__(self, value):
         """Todo numero debe ser igual a otro numero"""
         pass
+
+    def __neg__(self):
+        return (-1) * self
+    
+    def __sub__(self, other:Numerico):
+        return self + (- other)        
+
+    def __truediv__(self, other:Numerico):
+        return self * (other)**(-1)
 
     @staticmethod
     def validarNumero(num:Numerico|int|float|complex):

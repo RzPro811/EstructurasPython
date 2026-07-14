@@ -471,9 +471,15 @@ class MatrizAlgebraica:
 
     #METODOS ESTATICOS
     @staticmethod
-    def convertirAlgebraico(matriz:Matriz) ->MatrizAlgebraica:
+    def convertirAlgebraico(matriz:Matriz) -> MatrizAlgebraica:
         """Convierte una Matriz normal en una matriz algebraica
 
+        **parameters**
+            -   matriz (Matriz): tipo de dato numerico
+
+        **excepciones**
+            -   **TypeError**: Si lo ingresado por parametro no es una Matriz o el tipo de dato no es numerico
+            -   **FalloDeConversion**: Si la Matriz ingresada no está llena
         """
         validarTipoObjeto(Matriz, matriz, "Inresa una Matriz")
         validarCondicion(not matriz.estaLleno(), "La Matriz ingresada debe estar llena", FalloDeConversion)
@@ -491,7 +497,22 @@ class MatrizAlgebraica:
         return MatrizAlgebraica(*conversion, permtirFloat=matriz.getType() is float)
     
     @staticmethod
-    def generarNula(dimensionColumna:int, dimensionFila:int):
+    def generarNula(dimensionColumna:int, dimensionFila:int) -> MatrizAlgebraica:
+        """Genera una matriz nula
+        
+        **parameters**
+            -   dimensionColumna (int): mayor que cero
+            -   dimensionFila (int): mayor que cero
+
+        **return**
+            -   (MatrizAlgebraica): Matriz que solo contiene ceros
+
+        **excepciones**            
+            -   **TypeError** si alguno de los parametros no es entero
+            -   **DimensionIncompatibleError** si alguna dimension ingresada es menor o igual que cero
+        """
+        validarNoNegativo(dimensionFila, False, "Ingrese una dimension positiva", DimensionIncompatibleError)
+        validarNoNegativo(dimensionColumna, False, "Ingrese una dimension positiva", DimensionIncompatibleError)
         nula = Matriz(int, dimensionColumna, dimensionFila)
         
         for i in range(dimensionColumna):
@@ -501,7 +522,16 @@ class MatrizAlgebraica:
         return MatrizAlgebraica.convertirAlgebraico(nula)
 
     @staticmethod
-    def generarIdentidad(dimension:int):
+    def generarIdentidad(dimension:int) -> MatrizAlgebraica:
+        """Genera una matriz identidad
+        
+        **parameters**
+            -   dimension (int): positiva
+        
+        **return**
+            -   (MatrizAlgebraica) Matriz cuadradada que contiene unos en la diagonal y ceros en el resto de posciciones
+        """
+        validarNoNegativo(dimension, False, "Ingrese una dimension positiva", DimensionIncompatibleError)
         identidad = Matriz(int, dimension, dimension)
 
         for i in range(dimension):
@@ -512,6 +542,36 @@ class MatrizAlgebraica:
                     identidad.setItem(i,j,0)
 
         return MatrizAlgebraica.convertirAlgebraico(identidad) 
+
+    @staticmethod
+    def generarVersorCanonico(dimensionColumna:int, dimensionFila:int, versorNumero:int) -> MatrizAlgebraica:
+        """Genera el n-simo versor canonico del espacio vectorial de matrices 
+        de la dimension columna x fila ingresada por parametros. 
+        
+        **parameters**
+            -   dimensionColumna (int): mayor que cero
+            -   dimensionFila (int): mayor que cero
+            -   versorNumero (int): entre 1 y (dimensionColumna * dimensionFila)
+
+        **return**
+            -   (MatrizAlgebraica) Matriz de dimension 
+        """
+        validarNoNegativo(dimensionFila, False, "Ingrese una dimension positiva", DimensionIncompatibleError)
+        validarNoNegativo(dimensionColumna, False, "Ingrese una dimension positiva", DimensionIncompatibleError)
+        validarRango(versorNumero, 1, dimensionFila*dimensionColumna, False,
+            f"Ingrese un numero entre 1 y el producto de las dimensiones ingresadas ({dimensionFila*dimensionColumna})",
+            VersorInexistenteError
+        )
+        
+        versor = Matriz(int, dimensionColumna, dimensionFila)
+        pos = 0
+
+        for i in range(dimensionColumna):
+            for j in range(dimensionFila):
+                pos+=1
+                if pos == versorNumero:
+                    versor.setItem(i,j,1)
+                else:versor.setItem(i,j,0)
 
     #OPERACIONES
     def __add__(self, other:MatrizAlgebraica) -> MatrizAlgebraica:

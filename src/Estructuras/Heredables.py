@@ -195,3 +195,7 @@ class Numerico(ABC):
             validarVariosTipos(num, int, float, complex,
                 mensaje= "Inrgese un numero")
 
+    @staticmethod
+    def validarTipoNumerico(tipo:type):
+        if not issubclass(tipo, int) or not issubclass(tipo, float) or not issubclass(tipo, complex):
+            validarCondicion(not issubclass(tipo, Numerico), "Ingresa un tipo numerico", TypeError)

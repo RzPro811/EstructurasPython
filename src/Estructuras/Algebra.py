@@ -1,5 +1,5 @@
 from .Vector import Vector, Matriz, PRIMERA_POSCICION
-from .Validaciones import validarTipoObjeto, validarCondicion, validarRango,validarValorObligatorio, validarVariosTipos, validarNoNegativo
+from .Validaciones import validarTipoObjeto, validarCondicion, validarRango, validarValorCompatible, validarValorObligatorio, validarVariosTipos, validarNoNegativo
 from .Excepciones.Algebraicos import *
 from .Heredables import Numerico
 
@@ -414,6 +414,14 @@ class MatrizAlgebraica:
 
         return VectorAlgebraico(*transformacion)
 
+    def coordenadasEspaciales(self) -> VectorAlgebraico:
+        coordenadas = []
+
+        for numero in self:
+            coordenadas.append(numero)
+
+        return VectorAlgebraico(*coordenadas)
+
     #VALIDACIONES
     def __validarFilas(self, filas:tuple[VectorAlgebraico]):
         """Solo se usa en el constructor para validar que los Vectores Algebraicos ingresados cumplan
@@ -554,8 +562,17 @@ class MatrizAlgebraica:
             -   versorNumero (int): entre 1 y (dimensionColumna * dimensionFila)
 
         **return**
-            -   (MatrizAlgebraica) Matriz de dimension 
-        """
+            -   (MatrizAlgebraica) Matriz de dimension columna x fila con un 1 en la poscicion ingresada (tomando las posciciones
+            como si se tratase de un vector que contiene todas las filas de la matriz en una sola) y 0 en todas las demas posciciones
+        
+        **excepciones**
+            -   **TypeError**: si los parametros ingresados no es int
+            -   **DimensionIncompatibleError**: si alguna dimension ingresada no es positiva
+            -   **VersorInexistenteError**: si la poscicion ingresada se encuentra fuera del rango especificado 
+        """ 
+        validarTipoObjeto(int, dimensionColumna, "Ingrese una dimension int")
+        validarTipoObjeto(int, dimensionFila, "Ingrese una dimension int")
+        validarTipoObjeto(int, versorNumero, "Ingrese una posicion int")
         validarNoNegativo(dimensionFila, False, "Ingrese una dimension positiva", DimensionIncompatibleError)
         validarNoNegativo(dimensionColumna, False, "Ingrese una dimension positiva", DimensionIncompatibleError)
         validarRango(versorNumero, 1, dimensionFila*dimensionColumna, False,
@@ -741,35 +758,140 @@ class Polinomio:
             Numerico.validarNumero(numero)
             polinomio.append(numero)
 
+        while (polinomio[-1] == 0) and (len(polinomio) > 1):
+            polinomio.pop()
+
         self.__polinomio = tuple(polinomio)
 
-    def __str__(self):
+    #METODOS GENERALES
+    def __str__(self) -> str:
         cadena = "p(x) = "
         
         for i in range(self.getGrado() + 1):
-            cadena += f"({self.__polinomio[i]})"
-            
-            match i:
-                case 0: cadena +="+"
-                case 1: cadena +="x+"
-                case _: cadena +=f"x^{i}+"
+            if self.__polinomio[i] != 0 or self.getGrado() == 0:    
+                cadena += f"({self.__polinomio[i]})"
+                
+                match i:
+                    case 0: cadena +="+"
+                    case 1: cadena +="x+"
+                    case _: cadena +=f"x^{i}+"
 
         return cadena[:-1]
     
-    #METODOS GENERALES
+    def __iter__(self):
+        for coeficiente in self.__polinomio:
+            yield coeficiente
+
+    def __getitem__(self, key:int) -> int|float|complex|Numerico:
+        validarTipoObjeto(int, key, "Ingresa un indice entero")
+        validarRango(key, PRIMERA_POSCICION, self.getGrado(),True, f"Ingresa un indice entre {PRIMERA_POSCICION} y {self.getGrado()}")
+        return self.__polinomio[key]
+
+    def __eq__(self, value:Polinomio):
+        igual = isinstance(value, Polinomio)
+        i = 0
+        
+        while igual and i <= self.getGrado():
+            igual = (self[i] == value[i])
+            i+=1
+
+        return igual
+
     #METODOS DE CLASE
     #METODOS INTERNOS
     #METODOS ESTATICOS
+    @staticmethod
+    def generarNulo() -> Polinomio:
+        return Polinomio(0)
+
+    @staticmethod
+    def generarVersorCanonico(grado:int) -> Polinomio:
+        validarNoNegativo(grado,True)
+        versor = []
+        while len(versor) < grado - 1:
+            versor.append(0)
+        versor.append(1)
+
+        return Polinomio(*versor)
+
     #OPERACIONES
-    def __add__(self, other):pass
-    def __mul__(self, othrt):pass
-    def derivar(self):pass
-    def primitiva(self):pass
-    def integrar(self):pass
+    def __add__(self, other:Polinomio) -> Polinomio:
+        validarTipoObjeto(Polinomio, other, "Solo se le puede sumar un polinomio a otro polinomio")
+        polinomio = []
+        gradoMayor = max(self, other, key=Polinomio.getGrado)
+        gradoMenor = min(self, other, key=Polinomio.getGrado)
+
+        for i in range(gradoMayor.getGrado()+1):
+            if i <= gradoMenor.getGrado():
+                polinomio.append(self[i]+other[i])
+            else:
+                polinomio.append(gradoMayor[i])
+
+        return Polinomio(*polinomio)
+
+    def __mul__(self, esc:int):
+        Numerico.validarNumero(esc)
+        polinomio = []
+        
+        for coeficiente in self:
+            polinomio.append(coeficiente*esc)
+
+    def __call__(self, x:int):
+        Numerico.validarNumero(x)
+        resultado = 0
+        for i in range(self.getGrado()+1):
+            resultado += self[i]* (x ** i)
+        return resultado
+        
+    def __neg__(self):
+        return self*(-1)
+    def __sub__(self, other:Polinomio):
+        return self + (-other)
+    def __truediv__(self, other):
+        return self * (1/other)
+
+
+    def derivar(self):
+        derivada = []
+        for i in range(self.getGrado()):
+            derivada.append(self[i+1]*(i+1))
+
+        return Polinomio(*derivada)
+
+    def primitiva(self, c:int = PRIMERA_POSCICION):
+        Numerico.validarNumero(c)
+        integral = [c]
+
+        for i in range(self.getGrado()+1):
+            integral.append(self[i]/(i+1))
+
+        return Polinomio(*integral)
+    
+    def integrar(self, inicio:int, fin:int) -> int:
+        Numerico.validarNumero(inicio)
+        Numerico.validarNumero(fin)
+
+        primitiva = self.primitiva()
+
+        return primitiva(fin) - primitiva(inicio)
+
     @staticmethod
-    def productoPolinomial():pass
+    def productoPolinomial(pol1:Polinomio, pol2:Polinomio):
+        validarTipoObjeto(Polinomio, pol1, "Ingrese un polinomio")
+        validarTipoObjeto(Polinomio, pol2, "Ingrese un polinomio")
+        
+        producto = Polinomio.generarNulo() 
+        for i in range(pol1.getGrado() + 1):
+            aux = [] + [0]*i
+            for j in range(pol2.getGrado() + 1):
+                aux.append(pol1[i]*pol2[j])
+            producto += Polinomio(*aux)
+        return producto
+    
     @staticmethod
-    def productoInterno():pass
+    def productoInterno(pol1, pol2):
+        return Polinomio.productoPolinomial(pol1,pol2).integrar(0,1)
+
     @staticmethod
     def divisonPolinomica():pass
     @staticmethod

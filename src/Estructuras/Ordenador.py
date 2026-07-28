@@ -581,20 +581,19 @@ class Ordenador:
 
     #QUICK SORT
     def __elegirPivote(self, vector:Vector, inicio:int, final:int):
-        i = inicio
-        j = final - 1
-        piv = final
-
-        while (i <= j):
-            if self.__esMenor(vector[piv], vector[j]):
-                vector.intercambiar(piv, j)
+        i, j, piv = inicio+1, final, inicio
+        
+        while (i < j):
+            if vector[i] <= vector[piv]:
+                i+=1
+            elif vector[j] >= vector[piv]:
                 j-=1
-                piv -= 1
             else:
                 vector.intercambiar(i,j)
-                i+=1
 
-        return piv
+        vector.intercambiar(i-1, piv)
+
+        return i-1
 
     def __quick(self, vector:Vector, inicio:int, fin:int):
         if (fin - inicio > 0):
@@ -1204,24 +1203,24 @@ class Visualizador():
     #QUICK SORT
     @staticmethod
     def __framesQuickSort(vector:Vector, inicio:int, fin:int, pivotes:set[int]):
-        if fin > inicio:
-            i, j, piv = inicio, fin - 1, fin
+        if fin - inicio > 0:
+            i, j, piv = inicio+1, fin, inicio
 
             while (i <= j):
-                if vector[j] > vector[piv]:
-                    vector.intercambiar(j, piv)
-                    j -=1
-                    piv -=1
+                if vector[i] <= vector[piv]:
+                    i+=1
+                elif vector[j] >= vector[piv]:
+                    j-=1
                 else:
                     vector.intercambiar(i,j)
-                    i+=1
 
-           
                 yield i, j, piv
-            pivotes.add(piv)
 
-            yield from Visualizador.__framesQuickSort(vector, inicio, piv - 1, pivotes)
-            yield from Visualizador.__framesQuickSort(vector, piv + 1, fin, pivotes)
+            vector.intercambiar(i-1, piv)
+            pivotes.add(i-1)
+
+            yield from Visualizador.__framesQuickSort(vector, inicio, i-2, pivotes)
+            yield from Visualizador.__framesQuickSort(vector, i, fin, pivotes)
 
     @staticmethod
     def verQuickSort(longitud:int = LONGITUD_LARGA):

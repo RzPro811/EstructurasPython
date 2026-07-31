@@ -1,5 +1,8 @@
 from .Heredables import TypeStruct, DataStruct, Generic, T
 from .Validaciones import validarTipoObjeto, validarCondicion
+from .Vector import Vector
+from .Excepciones.Generales import ElementoNoEncontrado
+
 
 #SEMILLA -------------------------------------------------------------------------------------------------------------
 class SemillaBin(DataStruct, Generic[T]):
@@ -139,7 +142,15 @@ class ArbolBin(Generic[T], TypeStruct):
         self.__setRaiz(None)
         self.__iniciarConteo()
 
+    #METODOS GENERALES
+    def __iter__(self):
+        for item in self.mapear():
+            yield item
+
     #METODOS DE CLASE
+    def estaElItem(self, item:T) -> bool:
+        return self.__buscar(item, self.__getRaiz())
+    
     def estaEquilibrado(self) -> bool:
         return self.__getRaiz().getEquilibrio() == 0
 
@@ -148,15 +159,92 @@ class ArbolBin(Generic[T], TypeStruct):
 
     def agregar(self, item:T):
         self.__validarEntrada__(item)
+
+        if self.estaVacio():
+            self.__setRaiz(self.__generarSemilla(item))
+        else:
+            self.__insertarDato(item, self.__getRaiz())
+        
         self.__agregarItem()
+        
 
     def remover(self, item:T):
         self.__validarEntrada__(item)
         self.__quitarItem()
 
-    def mapear(self) -> list:pass 
+    def mapear(self) -> Vector[T]:
+        vector = Vector(self.getType(), self.getCantidadElementos()) 
+        lista = []
+        self.__recorrerArbol(self.__getRaiz(), lista)
+
+        for i in range(self.getCantidadElementos()):
+            vector[i] = lista[i]
+
+        return vector
 
     #METODOS INTERNOS
+    def __buscar(self, item:T, semilla:SemillaBin[T]) -> bool:
+        if semilla == None:
+            return False
+
+        if item == semilla.getDato():
+            return True
+
+        if self.__menorIgual(item, semilla.getDato()):
+            return self.__buscar(item, semilla.getIzquierda())
+
+        return self.__buscar(item, semilla.getDerecha())
+            
+    def __generarSemilla(self, dato:T) -> SemillaBin[T]:
+        return SemillaBin(self.getType(), dato)
+
+    def __colocarDato(self, item:T, semilla:SemillaBin[T]):
+        insercion = self.__generarSemilla(item)
+
+        if self.__menorIgual(item, semilla.getDato()):
+            semilla.setIzquierda(insercion)
+        else:
+            semilla.setDerecha(insercion)
+
+    def __seleccionarHijo(self, item:T, semilla:SemillaBin[T]) -> SemillaBin[T]:
+        if self.__menorIgual(item, semilla.getDato()):
+            return semilla.getIzquierda()
+        else:
+            return semilla.getDerecha()
+
+    def __colocarIzq(self, item:T, semilla:SemillaBin[T]):
+        if semilla.getIzquierda() is not None:
+            self.__insertarDato(item, semilla.getIzquierda())
+        else:
+            semilla.setIzquierda(self.__generarSemilla(item))
+    
+    def __colocarDer(self, item:T, semilla:SemillaBin[T]):
+        if semilla.getDerecha() is not None:
+            self.__insertarDato(item, semilla.getDerecha())
+        else:
+            semilla.setDerecha(self.__generarSemilla(item))
+
+    def __insertarDato(self, item:T, semilla:SemillaBin[T]):
+        if item == semilla.getDato():
+            self.__quitarItem()
+        elif semilla.tieneAmbosHijos():
+            self.__insertarDato(item, self.__seleccionarHijo(item, semilla))
+        elif not semilla.tieneHijos():
+            self.__colocarDato(item, semilla)
+        elif self.__menorIgual(item, semilla.getDato()):
+            self.__colocarIzq(item, semilla)
+        else:
+            self.__colocarDer(item, semilla)
+
+    def __recorrerArbol(self, semilla:SemillaBin[T], lista:list):
+        if semilla.getIzquierda() is not None:
+            self.__recorrerArbol(semilla.getIzquierda(),lista)
+
+        lista.append(semilla.getDato())
+
+        if semilla.getDerecha() is not None:
+            self.__recorrerArbol(semilla.getDerecha(),lista)
+
     def __iniciarConteo(self):
         self.__cantidadElementos = 0
 
@@ -179,6 +267,30 @@ class ArbolBin(Generic[T], TypeStruct):
     def __metodo(self, entrada:T) -> object:
         return self.__ordenamiento(entrada)
 
+    #METODOS ESTATICOS
+    @staticmethod
+    def union(arbol1:ArbolBin[T], arbol2:ArbolBin[T]) -> ArbolBin[T]:
+        union = ArbolBin(arbol1.getType(), arbol1.__ordenamiento)
+
+        for item in arbol1:
+            union.agregar(item)
+
+        for item in arbol2:
+            union.agregar(item)
+
+        return union
+
+    @staticmethod
+    def interseccion(arbol1:ArbolBin[T], arbol2:ArbolBin[T]) -> ArbolBin[T]:
+        interseccion = ArbolBin(arbol1.getType(), arbol1.__ordenamiento)
+
+        for item in arbol1:
+            if item in arbol2:
+                interseccion.agregar(item)
+
+        return interseccion
+
+    
     #GETTERS
     def __getRaiz(self) -> SemillaBin:
         return self.__raiz

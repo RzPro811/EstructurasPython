@@ -669,9 +669,9 @@ class MatrizAlgebraica:
                     if j != columnaDejada:
                         fila.append(self.getItem(i,j))
                 
-                submatriz.append(VectorAlgebraico(*fila,permitirFloat=self.__permitirFloat))
+                submatriz.append(VectorAlgebraico(*fila))
 
-        return MatrizAlgebraica(*submatriz, permtirFloat= self.__permitirFloat)
+        return MatrizAlgebraica(*submatriz)
     
     def getCoordenadasMatriciales(self) -> VectorAlgebraico:
         coordenadas = []
@@ -849,7 +849,6 @@ class Polinomio:
         return self + (-other)
     def __truediv__(self, other):
         return self * (1/other)
-
 
     def derivar(self):
         derivada = []

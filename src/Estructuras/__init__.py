@@ -58,10 +58,10 @@ Extras:
 from .Heredables import TypeStruct, DataStruct, Numerico
 from .Lista import Lista
 from .Vector import Vector, Matriz
-from .Grafo import Grafo, Digrafo
+from .__Grafo import Grafo, Digrafo
 from .Ordenador import Ordenador, Visualizador
 from .NoLineales import Cola, Pila, Heap
-from .Algebra import VectorAlgebraico, MatrizAlgebraica, Polinomio
+from .__Algebra import VectorAlgebraico, MatrizAlgebraica, Polinomio
 from .Validaciones import (FalloValidacion,
     validarTipo,
     validarVariosTipos,

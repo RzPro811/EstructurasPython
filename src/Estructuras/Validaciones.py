@@ -246,3 +246,7 @@ def validarNoNone(dato:T, mensaje:str = None, error:Exception = TypeError):
     
     if dato is None:
         raise error(mensaje)
+
+def filtrarElNulo(*datos:T) -> T:
+    for item in datos:
+        if item is not None: return item

@@ -77,13 +77,15 @@ class Grafo(Generic[V,E]):
         recorrido = []
         i = PRIMERA_POSCICION
 
-        while conexo and i < self.getCantidadVertices():
+        while conexo and i < self.getCantidadVertices() - 1:
             conexo = False
 
             for vertice in self:
-                if len(recorrido) == 0: recorrido.append(vertice)
-                if self.estaConectado(vertice,recorrido[i]) and (vertice not in recorrido):
+                if len(recorrido) == 0: 
+                    recorrido.append(vertice)
+                if self.estaConectado(vertice,recorrido[i]):
                     conexo = True
+                if (vertice not in recorrido):
                     recorrido.append(vertice)
 
             i+=1
@@ -145,6 +147,15 @@ class Grafo(Generic[V,E]):
         self.__validarVertice(vertice1)
         self.__validarVertice(vertice2)
         return self.__adyacencia.getItem(self.__indiceVertice(vertice1),self.__indiceVertice(vertice2)) == ADYAENCIA
+
+    def tieneConexion(self, vertice:V) -> bool:
+        self.__validarVertice(vertice)
+
+        for vertex in self:
+            if self.estaConectado(vertice, vertex):
+                return True
+
+        return False
 
     def existeCamintoEntre(self, vertice1:V, vertice2:V) -> bool:
         self.__validarVertice(vertice1, vertice2)
@@ -445,7 +456,8 @@ class Grafo(Generic[V,E]):
         self.__tipoE.__validarEntrada__(arista,True)
 
     def __validarPeso(self):
-        validarCondicion(not self.esPesado(), "Para este metodo, es necesario que el grafo esté pesado, osea que el tipo E no sea None", PesoInvalido)
+        validarCondicion(not self.esPesado(), 
+                         "Para este metodo, es necesario que el grafo esté pesado, osea que el tipo E no sea None", TipoGrafoIncompatible)
         validarTiposPorHerencia(self.getTipoArista(), int, float, Numerico, 
                                 mensaje= "Para este metodo, el tipo de arista E debe ser un numero real (int, float o Numerico)", error= PesoInvalido)
 
@@ -760,26 +772,66 @@ class Grafo(Generic[V,E]):
     
     #RECORRER GRAFO 
     def mapearGrafo(self, inicio:V) -> Vector[V]:
+        """Mapea el grafo y devuelve un vector con los vertices en orden de conexidad"""
+        self.__validarVertice(inicio)
         vector = self.__vectorDijkstra()
         vector[PRIMERA_POSCICION] = inicio
         vertices = self.getVertices()
         vertices.remove(inicio)
         j = 1
 
-        for i in range(self.getCantidadVertices()-1):
-            for vertice in self:   
-                if self.estaConectado(vector[i], vertice) and (vertice in vertices):
+        for i in range(self.getCantidadVertices()-2):
+            conexo = False
+
+            for vertice in self:  
+
+                if self.estaConectado(vector[i], vertice):
+                    conexo = True 
+
+                if (vertice in vertices): 
                     vector[j] = vertice
                     vertices.remove(vertice)
                     j+=1
 
+            if not conexo:
+                vector[j] = vertices.pop()
+                j+=1
+
         return vector
+
+    def __preparativosPrim(self, inicio:V) -> tuple[Grafo[V,E], Vector[V]]:
+        arbol = Grafo.generarGrafoInconexo(self.getVertices(), self.getTipoArista())
+        vector = self.mapearGrafo(inicio)
+        
+        return arbol, vector
+
+    def arbolGeneradorMinimo(self, inicio:V) -> Grafo[V,E]:
+        self.__validarPeso()
+        self.__validarVertice(inicio)
+        validarCondicion(not self.esConexo(), "Este Algoritmo funciona solo con grafos conexos", TipoGrafoIncompatible)
+
+        arbol, vertices = self.__preparativosPrim(inicio)
+        
+        for i in range(vertices.getLongitud()):
+            pesoMinimo = 0
+            conexionMinima = None
+            for j in range(vertices.getLongitud()):
+                if (self.estaConectado(vertices[i], vertices[j]) and (pesoMinimo < self.getAdyacencia(vertices[i], vertices[j])) 
+                    and not arbol.tieneConexion(vertices[j])):
+
+                    pesoMinimo = self.getAdyacencia(vertices[i], vertices[j])
+                    conexionMinima = vertices[j]
+
+            if conexionMinima is not None:
+                arbol.conectarVertices(vertices[i], conexionMinima, self.getAdyacencia(vertices[i], conexionMinima))
+
+        return arbol
 
     def __vectorDijkstra(self) -> Vector[V]:
         return Vector(self.getTipoVertice(), self.getCantidadVertices())
 
     def __vectorVisitadosDijsktra(self, inicio, fin) -> Vector[V]:
-        vector = self.__vectorDijkstra()
+        vector = self.mapearGrafo()
 
     def caminoMasCorto(self, inicio:V, fin:V) -> Grafo[V,E]:
         self.__validarVertice(inicio, fin)
@@ -886,9 +938,6 @@ class Grafo(Generic[V,E]):
         self.__dibujarGrafo__(G, pos, ax)
 
         plt.show()
-
-
-
 
 
 

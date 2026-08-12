@@ -1,5 +1,5 @@
 from .Heredables import TypeStruct, DataStruct, Generic, T
-from .Validaciones import validarTipoObjeto, validarCondicion, filtrarElNulo
+from .Validaciones import validarTipoObjeto, validarCondicion
 from .Vector import Vector
 from .Excepciones.Generales import ElementoNoEncontrado
 
@@ -110,6 +110,19 @@ class SemillaBin(DataStruct, Generic[T]):
             return -1 + self.getIzquierda().getEquilibrio()
 
         return 1 + self.getDerecha().getEquilibrio()
+
+    def getCantidadDescendientes(self) -> int:
+        if not self.tieneHijos():
+            return 0
+        if self.tieneAmbosHijos():
+            return 2 + self.getDerecha().getCantidadDescendientes() + self.getIzquierda().getCantidadDescendientes()
+        return 1+self.getUnicoHijo().getCantidadDescendientes()
+
+    def getUnicoHijo(self) -> SemillaBin[T]:
+        validarCondicion(self.tieneAmbosHijos() or not self.tieneHijos(), 
+                         "Este metodo funciona solo si la semilla tiene solamente un hijo")
+        if self.tieneHijoDer(): return self.getDerecha()
+        else: return self.getIzquierda()
 
     def getIzquierda(self) -> SemillaBin[T]:
         return self.__izquierda
@@ -274,15 +287,6 @@ class ArbolBin(Generic[T], TypeStruct):
     def __metodo(self, entrada:T) -> object:
         return self.__ordenamiento(entrada)
 
-    def __cantidadHijos(self, semilla:SemillaBin[T], cantidad:int) -> int:
-        if semilla.tieneAmbosHijos():
-            cantidad +=2
-        elif semilla.tieneHijos():
-            cantidad += self.__cantidadHijos(
-                filtrarElNulo(semilla.getIzquierda(), semilla.getDerecha()), cantidad
-            ) + 1
-        return cantidad
-
     #VALIDACIONES
     def __buscarSemilla(self, item:T, semilla:SemillaBin[T]) -> SemillaBin[T]: 
         if semilla is None:
@@ -323,14 +327,14 @@ class ArbolBin(Generic[T], TypeStruct):
     
     #GETTERS
     def getCantidadHijos(self, item:T) -> int:
-        return self.__cantidadHijos(self.__buscarSemilla(item,self.__getRaiz()), 0)
+        return self.__buscarSemilla(item,self.__getRaiz()).getCantidadDescendientes()
 
     def getSubarbol(self, item:T) -> ArbolBin[T]:
         raiz = self.__buscarSemilla(item, self.__getRaiz())
         subarbol = ArbolBin(self.getType())
 
         subarbol.__setRaiz(raiz)
-        subarbol.__cantidadElementos = self.__cantidadHijos(raiz,0)
+        subarbol.__cantidadElementos = raiz.getCantidadDescendientes()
 
         return subarbol
 

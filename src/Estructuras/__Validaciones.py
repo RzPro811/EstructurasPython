@@ -113,7 +113,12 @@ def validarVariosTipos(objeto:T, *tipos:type, mensaje:str = None, error:Exceptio
     if lanzarError:
         raise error(mensaje)
 
+def validarTiposPorHerencia(hijo:type, *padres:tuple[type], mensaje:str = None, error:Exception = TypeError):
+    validarError(error)
+    mensaje = crearMensaje(mensaje, f"Ingresa un tipo que herede de {padres}")
 
+    if not issubclass(hijo, padres):
+        raise error(mensaje)
     
 def validarNoNegativo(numero: int, incluyeCero:bool = True, mensaje:str = None, error:Exception = ValueError):
     """Valida que un numero ingresado no sea un valor negativo
@@ -246,3 +251,7 @@ def validarNoNone(dato:T, mensaje:str = None, error:Exception = TypeError):
     
     if dato is None:
         raise error(mensaje)
+
+def filtrarElNulo(*datos:T) -> T:
+    for item in datos:
+        if item is not None: return item

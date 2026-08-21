@@ -7,8 +7,6 @@ Estructuras Incluidas:
     -   **Cola**
     -   **Pila**
     -   **Heap**
-    -   **VectorAlgrebraico**
-    -   **MatrizAlgebraica**
     -   **Ordenador**
     -   **Grafo**
     -   **Digrafo**
@@ -40,8 +38,6 @@ Excepciones:
     -   **AdyacenciaError**
     -   **VerticeDobleError**
     -   **VerticeNoEncontradoError**
-    -   **NoCuadraEstaMatriz**
-    -   **DimensionIncompatibleError**
     -   **Incomparable**
     -   **GeneracionNegativaError**
     -   **MaximoMinimoIntercambiados**
@@ -55,14 +51,13 @@ Extras:
     -   **MalditoHereje**
 """
 
-from .Heredables import TypeStruct, DataStruct, Numerico
-from .Lista import Lista
-from .Vector import Vector, Matriz
-from .Grafo import Grafo, Digrafo
-from .Ordenador import Ordenador, Visualizador
-from .NoLineales import Cola, Pila, Heap
-from .Algebra import VectorAlgebraico, MatrizAlgebraica
-from .Validaciones import (FalloValidacion,
+from .__Heredables import TypeStruct, DataStruct
+from .__Lista import Lista
+from .__Vector import Vector, Matriz
+from .__Grafo import Grafo, Digrafo
+from .__Ordenador import Ordenador, Visualizador
+from .__NoLineales import Cola, Pila, Heap
+from .__Validaciones import (FalloValidacion,
     validarTipo,
     validarVariosTipos,
     ValidarTipoUnico,
@@ -79,7 +74,6 @@ from .Validaciones import (FalloValidacion,
 from .Excepciones.Generales import LlenoError, VacioError, ImplosionError, MetodoInvalidoError, LongitudNegativaError
 from .Excepciones.LinkedList import ErrorCursorDesactivado, ErrorCursorEncendido
 from .Excepciones.Grafo import TipoGrafoIncompatible, OperacionGrafosInvalida, AdyacenciaError, VerticeDobleError, VerticeNoEncontradoError
-from .Excepciones.Algebraicos import NoCuadraEstaMatriz, DimensionIncompatibleError
 from .Excepciones.Ordenador import Incomparable, GeneracionNegativaError, MaximoMinimoIntercambiados, MalditoHereje
 
 __all__ = [
@@ -93,11 +87,8 @@ __all__ = [
     "Cola", 
     "Pila", 
     "Heap", 
-    "VectorAlgebraico", 
-    "MatrizAlgebraica", 
     "TypeStruct", 
     "DataStruct",
-    "Numerico",
     "validarTipo",
     "validarVariosTipos",
     "ValidarTipoUnico",
@@ -123,8 +114,6 @@ __all__ = [
     "AdyacenciaError",
     "VerticeDobleError",
     "VerticeNoEncontradoError",
-    "NoCuadraEstaMatriz",
-    "DimensionIncompatibleError",
     "Incomparable",
     "GeneracionNegativaError",
     "MaximoMinimoIntercambiados",

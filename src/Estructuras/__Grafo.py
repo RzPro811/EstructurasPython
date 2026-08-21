@@ -1,9 +1,9 @@
-from .Validaciones import (TypeVar, Generic, ValidarTipoUnico, validarValorCompatible, 
-                           validarCondicion, validarTipoObjeto)
-from .Heredables import TypeStruct, DataStruct
+from .__Validaciones import (TypeVar, Generic, ValidarTipoUnico, validarValorCompatible, 
+                           validarCondicion, validarTipoObjeto, validarTiposPorHerencia)
+from .__Heredables import TypeStruct, DataStruct, Numerico
 from .Excepciones.Grafo import *
 from .Excepciones.Generales import VacioError
-from .Algebra import Matriz, PRIMERA_POSCICION
+from .__Vector import Matriz, Vector, PRIMERA_POSCICION
 from typing import Generator
 
 try:
@@ -25,10 +25,6 @@ MARGEN = 0.5
 
 
 nodoSeleccionado = None
-
-class Cursor(DataStruct, Generic[V]):
-    pass
-
 #Grafo ------------------------------------------------------------------------------------------------------------
 class Grafo(Generic[V,E]):
     #CONSTANTES
@@ -76,6 +72,25 @@ class Grafo(Generic[V,E]):
         """
         return self.getTipoArista() is not None
 
+    def esConexo(self) -> bool:
+        conexo = True
+        recorrido = []
+        i = PRIMERA_POSCICION
+
+        while conexo and i < self.getCantidadVertices() - 1:
+            conexo = False
+
+            for vertice in self:
+                if len(recorrido) == 0: 
+                    recorrido.append(vertice)
+                if self.estaConectado(vertice,recorrido[i]):
+                    conexo = True
+                if (vertice not in recorrido):
+                    recorrido.append(vertice)
+
+            i+=1
+
+        return conexo
 
     def esPlanar(self) -> bool:
         """Verifica que un grafo sea planar. Es decir, que se pueda graficar sin que se crucen ninguna aristas
@@ -132,6 +147,35 @@ class Grafo(Generic[V,E]):
         self.__validarVertice(vertice1)
         self.__validarVertice(vertice2)
         return self.__adyacencia.getItem(self.__indiceVertice(vertice1),self.__indiceVertice(vertice2)) == ADYAENCIA
+
+    def tieneConexion(self, vertice:V) -> bool:
+        self.__validarVertice(vertice)
+
+        for vertex in self:
+            if self.estaConectado(vertice, vertex):
+                return True
+
+        return False
+
+    def existeCamintoEntre(self, vertice1:V, vertice2:V) -> bool:
+        self.__validarVertice(vertice1, vertice2)
+
+        vertices = self.getVertices()
+        hayCamino = True
+        i = PRIMERA_POSCICION
+        recorrido = [vertice1]
+
+        while hayCamino and (vertice2 not in recorrido):
+            hayCamino = False
+
+            for vertice in vertices:
+                if self.estaConectado(vertice, recorrido[i]) and (vertice not in recorrido):
+                    hayCamino = True
+                    recorrido.append(vertice)
+
+            i+=1
+
+        return hayCamino
 
     def agregarVertice(self, vertice:V):
         """Agrega un vertice al conjunto de vertices del grafo si es que no está ya en el conjunto de vertices
@@ -226,6 +270,7 @@ class Grafo(Generic[V,E]):
         """
         validarTipoObjeto(self.getTipoVertice(),vertice)
         return vertice in self.getVertices()
+
 
     #METODOS INTERNOS
     def __crearMatrices(self):
@@ -326,13 +371,13 @@ class Grafo(Generic[V,E]):
             -   grafoDonante (Grafo[V,E])
         """
         for vertice in grafoDonante:
-            self.agregarVertice(vertice)
+            if not self.esVertice(vertice):
+                self.agregarVertice(vertice)
 
         for vertice1 in grafoDonante:
             for vertice2 in grafoDonante:
                 if grafoDonante.estaConectado(vertice1,vertice2) and not self.estaConectado(vertice1, vertice2):
                     self.conectarVertices(vertice1, vertice2)
-
 
     #VALIDACIONES
     def __validarConexion(self, vertice1:V, vertice2:V, coneccion:E):
@@ -384,7 +429,7 @@ class Grafo(Generic[V,E]):
         self.__tipoV.__validarEntrada__(vertice)
         validarCondicion(vertice in self.__vertices.keys(),"Este vertice ya se añadió al grafo", VerticeDobleError)
 
-    def __validarVertice(self, vertice:V):
+    def __validarVertice(self, *vertices:V):
         """Valida un vertice para el funcionamiento del grafo
         
         **parameters**
@@ -394,9 +439,10 @@ class Grafo(Generic[V,E]):
             -   **TypeError**: si el vertice no es del tipo ingresado V
             -   **VerticeNoEncontradoError**: si el vertice no pertenece al grafo
         """
-        self.__tipoV.__validarEntrada__(vertice)
-        validarCondicion(vertice not in self.__vertices.keys(), 
-                         "Este vertice no pertenece al grafo", VerticeNoEncontradoError)
+        for vertice in vertices:
+            self.__tipoV.__validarEntrada__(vertice)
+            validarCondicion(vertice not in self.__vertices.keys(), 
+                            "Este vertice no pertenece al grafo", VerticeNoEncontradoError)
 
     def __validarArista(self, arista:E):
         """Valida que un dato ingresado sea una arista valida
@@ -408,6 +454,12 @@ class Grafo(Generic[V,E]):
             -   **TypeError**: si el dato ingresado no es del tipo ingresado E
         """
         self.__tipoE.__validarEntrada__(arista,True)
+
+    def __validarPeso(self):
+        validarCondicion(not self.esPesado(), 
+                         "Para este metodo, es necesario que el grafo esté pesado, osea que el tipo E no sea None", TipoGrafoIncompatible)
+        validarTiposPorHerencia(self.getTipoArista(), int, float, Numerico, 
+                                mensaje= "Para este metodo, el tipo de arista E debe ser un numero real (int, float o Numerico)", error= PesoInvalido)
 
     #ESTATICOS
     @staticmethod
@@ -434,7 +486,6 @@ class Grafo(Generic[V,E]):
             -   **TypeError** si al menos un parametro no es un grafo
             -   **OperacionGrafosInvalida** si los tipos de los vertices y las aristas de ambos grafos no son los mismos
         """
-
         Grafo.validarGrafo(grafo1)
         Grafo.validarGrafo(grafo2)
 
@@ -718,9 +769,73 @@ class Grafo(Generic[V,E]):
         self.__tipoV = TypeStruct(tipoVertices)
         self.__tipoE = TypeStruct(tipoAristas)
 
+    
+    #RECORRER GRAFO 
+    def mapearGrafo(self, inicio:V) -> Vector[V]:
+        """Mapea el grafo y devuelve un vector con los vertices en orden de conexidad"""
+        self.__validarVertice(inicio)
+        vector = self.__vectorDijkstra()
+        vector[PRIMERA_POSCICION] = inicio
+        vertices = self.getVertices()
+        vertices.remove(inicio)
+        j = 1
+
+        for i in range(self.getCantidadVertices()-2):
+            conexo = False
+
+            for vertice in self:  
+
+                if self.estaConectado(vector[i], vertice):
+                    conexo = True 
+
+                if (vertice in vertices): 
+                    vector[j] = vertice
+                    vertices.remove(vertice)
+                    j+=1
+
+            if not conexo:
+                vector[j] = vertices.pop()
+                j+=1
+
+        return vector
+
+    def __preparativosPrim(self, inicio:V) -> tuple[Grafo[V,E], Vector[V]]:
+        arbol = Grafo.generarGrafoInconexo(self.getVertices(), self.getTipoArista())
+        vector = self.mapearGrafo(inicio)
+        
+        return arbol, vector
+
+    def arbolGeneradorMinimo(self, inicio:V) -> Grafo[V,E]:
+        self.__validarPeso()
+        self.__validarVertice(inicio)
+        validarCondicion(not self.esConexo(), "Este Algoritmo funciona solo con grafos conexos", TipoGrafoIncompatible)
+
+        arbol, vertices = self.__preparativosPrim(inicio)
+
+        for i in range(self.getCantidadVertices() - 1):
+            conexionesNoPermitidas = []
+            j = 0
+            while (j < self.getCantidadVertices()):
+                pesoMinimo, vertice = None, None
+                
+
+    def __vectorDijkstra(self) -> Vector[V]:
+        return Vector(self.getTipoVertice(), self.getCantidadVertices())
+
+    def __vectorVisitadosDijsktra(self, inicio, fin) -> Vector[V]:
+        vector = self.mapearGrafo()
+
+    def caminoMasCorto(self, inicio:V, fin:V) -> Grafo[V,E]:
+        self.__validarVertice(inicio, fin)
+        self.__validarPeso()
+
+        camino = Grafo(self.getTipoVertice(),self.getTipoArista())
+
+        visitados = self.__vectorDijkstra()
+        noVisitados = self.mapearGrafo(inicio)
+        i = 0
+
     #VISUALIZAR
-
-
     def __dibujarGrafo__(self, G:nx.Graph|nx.DiGraph, pos:dict[str, tuple[float, float]], ax:Axes):    
         nx.draw(
             G, pos = pos, ax= ax,
@@ -815,6 +930,7 @@ class Grafo(Generic[V,E]):
         self.__dibujarGrafo__(G, pos, ax)
 
         plt.show()
+
 
 
 #Digrafo ------------------------------------------------------------------------------------------------------

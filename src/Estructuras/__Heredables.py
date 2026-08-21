@@ -1,5 +1,5 @@
-from .Validaciones import validarTipo, validarVariosTipos, validarTipoObjeto, validarCondicion, Generic, T, FalloValidacion
-from abc import ABC, abstractmethod
+from .__Validaciones import validarTipo, validarTipoObjeto, validarCondicion, Generic, T, FalloValidacion
+
 
 #TYPE STRUCT ------------------------------------------------------------------------------------------- 
 class TypeStruct:
@@ -152,43 +152,4 @@ class DataStruct(TypeStruct,Generic[T]):
             -   permitirNone (bool): por defecto False. Si es True, entonces permitira guardar None en los DataStructs
         """
         self.__permitirNone = permitir
-
-#NUMERICO ------------------------------------------------------------------------------------------------
-class Numerico(ABC):
-    """Heredable para crear Numeros. Si necesitas crear un TDA Fraccion, Complejo, o algo por el estilo que
-    sea numero, haz que herede este heredabe y podrá ser usado en los Vectores y Matrices Algebraícos.
-    """
-    def __init__(self):pass
-
-    @abstractmethod
-    def __add__(self, other):
-        """Todo numero debe tener Suma"""
-        pass
-
-    @abstractmethod
-    def __mul__(self, other):
-        """Todo numero debe tener Multiplicacion"""
-        pass
-
-    def __neg__(self):
-        return (-1) * self
-    
-    def __sub__(self, other:Numerico):
-        return self + (- other)        
-
-    @abstractmethod
-    def __truediv__(self, other):
-        """Todo numero se debe de poder dividir"""
-        pass
-
-    @abstractmethod
-    def __eq__(self, value):
-        """Todo numero debe ser igual a otro numero"""
-        pass
-
-    @staticmethod
-    def validarNumero(num:Numerico|int|float|complex):
-        if not isinstance(num, Numerico):
-            validarVariosTipos(num, int, float, complex,
-                mensaje= "Inrgese un numero")
 

@@ -1,5 +1,5 @@
-from .Validaciones import validarTipo, validarVariosTipos, validarTipoObjeto, validarCondicion, Generic, T, FalloValidacion
-from abc import ABC, abstractmethod
+from .__Validaciones import validarTipo, validarTipoObjeto, validarCondicion, Generic, T, FalloValidacion
+
 
 #TYPE STRUCT ------------------------------------------------------------------------------------------- 
 class TypeStruct:
@@ -153,49 +153,3 @@ class DataStruct(TypeStruct,Generic[T]):
         """
         self.__permitirNone = permitir
 
-#NUMERICO ------------------------------------------------------------------------------------------------
-class Numerico(ABC):
-    """Heredable para crear Numeros. Si necesitas crear un TDA Fraccion, Complejo, o algo por el estilo que
-    sea numero, haz que herede este heredabe y podrá ser usado en los Vectores y Matrices Algebraícos.
-    """
-    def __init__(self):pass
-
-    @abstractmethod
-    def __add__(self, other):
-        """Todo numero debe tener Suma"""
-        pass
-
-    @abstractmethod
-    def __mul__(self, other):
-        """Todo numero debe tener Multiplicacion"""
-        pass
-
-    @abstractmethod
-    def __pow__(self, exp):
-        """Todo numero debe tener Potencias"""
-        pass
-
-    @abstractmethod
-    def __eq__(self, value):
-        """Todo numero debe ser igual a otro numero"""
-        pass
-
-    def __neg__(self):
-        return (-1) * self
-    
-    def __sub__(self, other:Numerico):
-        return self + (- other)        
-
-    def __truediv__(self, other:Numerico):
-        return self * (other)**(-1)
-
-    @staticmethod
-    def validarNumero(num:Numerico|int|float|complex):
-        if not isinstance(num, Numerico):
-            validarVariosTipos(num, int, float, complex,
-                mensaje= "Inrgese un numero")
-
-    @staticmethod
-    def validarTipoNumerico(tipo:type):
-        if not issubclass(tipo, int) or not issubclass(tipo, float) or not issubclass(tipo, complex):
-            validarCondicion(not issubclass(tipo, Numerico), "Ingresa un tipo numerico", TypeError)

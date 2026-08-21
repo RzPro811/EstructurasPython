@@ -1,8 +1,8 @@
-from .Validaciones import Generic, T, validarCondicion
-from .Heredables import TypeStruct
-from .Vector import PRIMERA_POSCICION
+from .__Validaciones import Generic, T, validarCondicion
+from .__Heredables import TypeStruct
+from .__Vector import PRIMERA_POSCICION
 from .Excepciones.Generales import *
-from .Lista import Lista
+from .__Lista import Lista
 
 
 #COLA-------------------------------------------------------------------------------------------------------------------------------------------

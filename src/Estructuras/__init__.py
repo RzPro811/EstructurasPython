@@ -51,13 +51,13 @@ Extras:
     -   **MalditoHereje**
 """
 
-from .Heredables import TypeStruct, DataStruct
-from .Lista import Lista
-from .Vector import Vector, Matriz
+from .__Heredables import TypeStruct, DataStruct
+from .__Lista import Lista
+from .__Vector import Vector, Matriz
 from .__Grafo import Grafo, Digrafo
-from .Ordenador import Ordenador, Visualizador
-from .NoLineales import Cola, Pila, Heap
-from .Validaciones import (FalloValidacion,
+from .__Ordenador import Ordenador, Visualizador
+from .__NoLineales import Cola, Pila, Heap
+from .__Validaciones import (FalloValidacion,
     validarTipo,
     validarVariosTipos,
     ValidarTipoUnico,

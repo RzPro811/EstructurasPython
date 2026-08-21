@@ -1,9 +1,9 @@
-from .Validaciones import (TypeVar, Generic, ValidarTipoUnico, validarValorCompatible, 
+from .__Validaciones import (TypeVar, Generic, ValidarTipoUnico, validarValorCompatible, 
                            validarCondicion, validarTipoObjeto, validarTiposPorHerencia)
-from .Heredables import TypeStruct, DataStruct, Numerico
+from .__Heredables import TypeStruct, DataStruct, Numerico
 from .Excepciones.Grafo import *
 from .Excepciones.Generales import VacioError
-from .Vector import Matriz, Vector, PRIMERA_POSCICION
+from .__Vector import Matriz, Vector, PRIMERA_POSCICION
 from typing import Generator
 
 try:

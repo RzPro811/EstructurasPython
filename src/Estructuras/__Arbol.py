@@ -1,6 +1,6 @@
-from .Heredables import TypeStruct, DataStruct, Generic, T
-from .Validaciones import validarTipoObjeto, validarCondicion, filtrarElNulo
-from .Vector import Vector
+from .__Heredables import TypeStruct, DataStruct, Generic, T
+from .__Validaciones import validarTipoObjeto, validarCondicion, filtrarElNulo
+from .__Vector import Vector
 from .Excepciones.Generales import ElementoNoEncontrado
 
 

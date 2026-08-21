@@ -3,7 +3,7 @@ from .Validaciones import (TypeVar, Generic, ValidarTipoUnico, validarValorCompa
 from .Heredables import TypeStruct, DataStruct, Numerico
 from .Excepciones.Grafo import *
 from .Excepciones.Generales import VacioError
-from .__Algebra import Matriz, Vector, MatrizAlgebraica, PRIMERA_POSCICION
+from .Vector import Matriz, Vector, PRIMERA_POSCICION
 from typing import Generator
 
 try:
@@ -811,21 +811,13 @@ class Grafo(Generic[V,E]):
         validarCondicion(not self.esConexo(), "Este Algoritmo funciona solo con grafos conexos", TipoGrafoIncompatible)
 
         arbol, vertices = self.__preparativosPrim(inicio)
-        
-        for i in range(vertices.getLongitud()):
-            pesoMinimo = 0
-            conexionMinima = None
-            for j in range(vertices.getLongitud()):
-                if (self.estaConectado(vertices[i], vertices[j]) and (pesoMinimo < self.getAdyacencia(vertices[i], vertices[j])) 
-                    and not arbol.tieneConexion(vertices[j])):
 
-                    pesoMinimo = self.getAdyacencia(vertices[i], vertices[j])
-                    conexionMinima = vertices[j]
-
-            if conexionMinima is not None:
-                arbol.conectarVertices(vertices[i], conexionMinima, self.getAdyacencia(vertices[i], conexionMinima))
-
-        return arbol
+        for i in range(self.getCantidadVertices() - 1):
+            conexionesNoPermitidas = []
+            j = 0
+            while (j < self.getCantidadVertices()):
+                pesoMinimo, vertice = None, None
+                
 
     def __vectorDijkstra(self) -> Vector[V]:
         return Vector(self.getTipoVertice(), self.getCantidadVertices())

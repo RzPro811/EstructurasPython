@@ -55,13 +55,12 @@ Extras:
     -   **MalditoHereje**
 """
 
-from .Heredables import TypeStruct, DataStruct, Numerico
+from .Heredables import TypeStruct, DataStruct
 from .Lista import Lista
 from .Vector import Vector, Matriz
 from .__Grafo import Grafo, Digrafo
 from .Ordenador import Ordenador, Visualizador
 from .NoLineales import Cola, Pila, Heap
-from .__Algebra import VectorAlgebraico, MatrizAlgebraica, Polinomio
 from .Validaciones import (FalloValidacion,
     validarTipo,
     validarVariosTipos,
@@ -79,7 +78,6 @@ from .Validaciones import (FalloValidacion,
 from .Excepciones.Generales import LlenoError, VacioError, ImplosionError, MetodoInvalidoError, LongitudNegativaError
 from .Excepciones.LinkedList import ErrorCursorDesactivado, ErrorCursorEncendido
 from .Excepciones.Grafo import TipoGrafoIncompatible, OperacionGrafosInvalida, AdyacenciaError, VerticeDobleError, VerticeNoEncontradoError
-from .Excepciones.Algebraicos import NoCuadraEstaMatriz, DimensionIncompatibleError
 from .Excepciones.Ordenador import Incomparable, GeneracionNegativaError, MaximoMinimoIntercambiados, MalditoHereje
 
 __all__ = [
@@ -93,12 +91,8 @@ __all__ = [
     "Cola", 
     "Pila", 
     "Heap", 
-    "VectorAlgebraico", 
-    "MatrizAlgebraica", 
-    "Polinomio",
     "TypeStruct", 
     "DataStruct",
-    "Numerico",
     "validarTipo",
     "validarVariosTipos",
     "ValidarTipoUnico",
@@ -124,8 +118,6 @@ __all__ = [
     "AdyacenciaError",
     "VerticeDobleError",
     "VerticeNoEncontradoError",
-    "NoCuadraEstaMatriz",
-    "DimensionIncompatibleError",
     "Incomparable",
     "GeneracionNegativaError",
     "MaximoMinimoIntercambiados",

@@ -7,8 +7,6 @@ Estructuras Incluidas:
     -   **Cola**
     -   **Pila**
     -   **Heap**
-    -   **VectorAlgrebraico**
-    -   **MatrizAlgebraica**
     -   **Ordenador**
     -   **Grafo**
     -   **Digrafo**
@@ -40,8 +38,6 @@ Excepciones:
     -   **AdyacenciaError**
     -   **VerticeDobleError**
     -   **VerticeNoEncontradoError**
-    -   **NoCuadraEstaMatriz**
-    -   **DimensionIncompatibleError**
     -   **Incomparable**
     -   **GeneracionNegativaError**
     -   **MaximoMinimoIntercambiados**

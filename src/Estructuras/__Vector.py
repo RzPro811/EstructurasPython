@@ -1,7 +1,7 @@
 from .__Validaciones import *
 from .__Excepciones.Generales import *
 from .__Heredables import TypeStruct
-from typing import Generator, Generic
+from typing import Generator, Generic, Iterable
 from random import shuffle
 
 class TipoExpansion(Enum):
@@ -13,23 +13,25 @@ class Vector(Generic[T], TypeStruct):
     #ATRIBUTOS
     __longitudOriginal: int
     __array: list[T]
-    __expansible: bool
     __tipoExpansion: TipoExpansion
 
     #CONSTRUCTOR
-    def __init__(self, tipo:type, longitud:int, expandir:bool = False) -> Vector[T]:
+    def __init__(self, tipo:type, longitud:int, tipoExpansion:TipoExpansion = TipoExpansion.DESACTIVADA) -> Vector[T]:
         """Dado un tipo de vector y una longitud crea un vector del tipo de dato ingresado
         
         **parameters**
-            -   **tipo** (type): tipo de dato almacenable
+            -   **tipo** (type): tipo de dato T
             -   **longitud** (int): longitud del vector
-            -   **expandir** (bool): por defecto False. Determina si el vector se va a expandir o no tras ser llenado
+            -   **tipoExpansion** (bool): DESACTIVADA (por defecto), AUTOMATICA o MANUAL
+
+        **excepciones**
+            -   **TypeError**: Si ninguno de los parametros ingresados es el indicado por parametro
+            -   **LongitudNegativaError**: Si la longitud ingresada es menor o igual a cero
         """
         super().__init__(tipo)
-        validarTipoObjeto(bool, expandir, "La condicion 'expandir' debe ser booleana")
         self.__setLongitudOriginal(longitud)
+        self.__setTipoExpansion(tipoExpansion)
         self.__array = self.__generarVector(longitud)
-        self.__expansible = expandir
 
     #METODOS GENERALES
     def __str__(self) -> str:
@@ -75,7 +77,7 @@ class Vector(Generic[T], TypeStruct):
         i = PRIMERA_POSCICION
 
         if self.estaLleno():
-            self.__validarExpansible()
+            self.__validarExpansionAutomatica()
             self.__expandir()
 
         while not agregado and (i <= self.__getPoscicionFinal()):
@@ -109,7 +111,6 @@ class Vector(Generic[T], TypeStruct):
 
         return elemento
 
-
     def remover(self, indice:int) -> T:
         """Quita el elemento en la poscicion ingresada por **parameters**        
         **parameters**
@@ -129,6 +130,42 @@ class Vector(Generic[T], TypeStruct):
 
         return elemento
 
+    def expandir(self, expansiones:int = 1) -> None:
+        """Expande manualmente el vector, añadiendo tantos espacios como haya tenído el vector al momento de crearse
+        
+        **parameters**
+            -   expansiones (int): por defecto 1. Si ingresa un numero mayor, entonces el vector se expandirá esa cantidad de veces
+
+        **Excepciones**
+            -   **MetodoInvalidoError** Si el vector no tiene tipo de expansión MANUAL
+            -   **TypeError** Si el parametro ingresado no es un int
+            -   **ImplosionError** Si la cantidad de expansiones no es una cantidad estrictamente positiva
+        """
+        self.__validarExpansionManual()
+        validarTipoObjeto(int, expansiones, "Ingresa una cantidad de expansiones entera")
+        validarNoNegativo(expansiones,False,"Ingrese un numero de expansión mayor o igual que 1", ImplosionError)
+
+        for i in range(expansiones):
+            self.__expandir()
+
+    def contraer(self, contracciones:int = 1) -> None:
+        """Contrae manualmente el vector, quitando tantos espacios como haya tenído el vector al momento de crearse
+        
+        **parameters**
+            -   expansiones (int): por defecto 1. Si ingresa un numero mayor, entonces el vector se contraerá esa cantidad de veces
+
+        **Excepciones**
+            -   **MetodoInvalidoError** Si el vector no tiene tipo de expansión MANUAL
+            -   **TypeError** Si el parametro ingresado no es un int
+            -   **ImplosionError** Si la cantidad de contracciones no es una cantidad estrictamente positiva
+        """
+        self.__validarExpansionManual()
+        validarTipoObjeto(int, contracciones, "Ingresa una cantidad de contracciones entera")
+        validarNoNegativo(contracciones, False, "Ingresa un numero de contracción mayor o igual que 1", ImplosionError)
+
+        while (self.estaExpandido() and (contracciones > 0)):
+            self.__contraer()
+            contracciones -= 1
 
     def intercambiar(self, indice:int, jndice:int) -> None:
         """Dadas dos posciciones del vector, intercambia los elementos en esas dos posciciones
@@ -162,6 +199,11 @@ class Vector(Generic[T], TypeStruct):
         self.__array = self.__generarVector(self.__getLongitudOriginal())
 
     def copiar(self) -> Vector[T]:
+        """Crea una copia exacta del vector
+        
+        **return**
+            -   (Vector[T]) un vector con los mismos elemento dentro suyo
+        """
         copia = Vector(self.getType(), self.__getLongitudOriginal(), self.esExpansible())
 
         copia.__array = self.__array.copy()
@@ -198,21 +240,6 @@ class Vector(Generic[T], TypeStruct):
             -   **list[None]** lista de elementos None con la longitud ingresada   
         """
         return [None]*longitud
-
-    def __tramoFinalVacio(self) -> bool:
-        """Verifica que el ultimo tramo de expansión del vector, este vacío
-        
-        **return**
-            -   (bool) Verdadero si el tramo final tiene unicamente elementos None, falso si al menos uno no lo es
-        """
-        vacio = True
-        i = self.__getPoscicionFinal()
-
-        while vacio and (i > self.__getLongitudOriginal() - self.__getLongitudOriginal()):
-            vacio = self[i] is None
-            i-=1
-
-        return vacio
 
     def __expandir(self) -> None:
         """Expande el vector"""
@@ -251,14 +278,44 @@ class Vector(Generic[T], TypeStruct):
         validarRango(indice, PRIMERA_POSCICION,self.__getPoscicionFinal(),
                      mensaje= f"Ingresa un valor entre {PRIMERA_POSCICION} y {self.__getPoscicionFinal()}")
 
-    def __validarExpansible(self) -> None:
-        """Valida que el vector se pueda expandir"""
-        validarCondicion(not self.esExpansible(),
-                         "El vector está lleno y no se puede expandir", LlenoError)
+    def __validarExpansionAutomatica(self) -> None:
+        """Valida que el vector se pueda expandir automaticamente"""
+        validarCondicion(self.getTipoExpansion() == TipoExpansion.AUTOMATICA,
+                         "El vector está lleno y no se puede expandir" + (
+                             " por su cuenta" if (self.esExpansible()) else ""), LlenoError)
+
+    def __validarExpansionManual(self) -> None:
+        """Valida que el vector tenga tipo de expansión manual"""
+        validarCondicion(self.getTipoExpansion() != TipoExpansion.MANUAL,
+                         "Este vector no tiene expansión manual", MetodoInvalidoError)
 
     def __validarNoVacio(self) -> None:
         """Valida que el vector no este vacío"""
         validarCondicion(self.estaVacio(), "El vector está vacío", VacioError)
+
+    #ESTATICOS
+    @staticmethod
+    def crearConIterable(iterable:Iterable, tipoExpansion:TipoExpansion = TipoExpansion.DESACTIVADA) -> Vector[T]:
+        """Dado un tipo de objeto iterable, crea un vector con los elementos en el objeto
+
+        **parameters**
+            -   iterable (Iterable): todos los elementos deben ser del mismo tipo de objeto
+            -   tipoExpansion (TipoExpansion): DESACTIVADA (por defecto), AUTOMATICA o MANUAL
+
+        **excepciones**
+            -   **TypeError**: Si el tipod e los parameteros no es el indicado o si al menos un elemento del iterable tiene un tipo de objeto distinto
+        """
+        if not isinstance(iterable, Iterable): raise TypeError("Ingresa un tipo iterable")
+        tipo = ValidarTipoUnico(iterable, "Ingresa una lista de elementos con tipo unico")
+
+        vector = Vector(tipo, len(iterable), tipoExpansion)
+        i = 0
+
+        for item in iterable:
+            vector[i] = item
+            i+=1
+
+        return vector
 
     #FLAGS
     def estaVacio(self) -> bool:
@@ -297,6 +354,9 @@ class Vector(Generic[T], TypeStruct):
         **parameters**
             -   item (T): puede ser None
         
+        **return**
+            -   (bool) Verdadero si el item ingresado se encuentra en el vector, falso si no
+            
         **excepciones**
             -   **TypeError**: si el item ingresado no es None o del tipo ingresado T
         """
@@ -307,21 +367,55 @@ class Vector(Generic[T], TypeStruct):
         """Valida que el vector se pueda expandir al llenarse
         
         **return**
-            -  (bool) si el vector se expande al llenarse, falso si no
+            -  (bool) Verdadero si el tipo de expansión del vector no es DESACTIVADA, falso si sí
         """
-        return self.__expansible
+        return self.getTipoExpansion() != TipoExpansion.DESACTIVADA
+
+    def expansionAutomatica(self) -> bool:
+        """Verifica que el vector tenga expansión automatica
+        
+        **return**
+            - (bool) Verdadero si el tipo de expansión del vector es AUTOMATICO, falso si no
+        """
+        return self.getTipoExpansion() == TipoExpansion.AUTOMATICA
+
+    def estaExpandido(self) -> bool:
+        return self.getLongitud() == self.__getLongitudOriginal()
+
+    #FLAGS INTERNAS
+    def __tramoFinalVacio(self) -> bool:
+        """Verifica que el ultimo tramo de expansión del vector, este vacío
+        
+        **return**
+            -   (bool) Verdadero si el tramo final tiene unicamente elementos None, falso si al menos uno no lo es
+        """
+        vacio = True
+        i = self.__getPoscicionFinal()
+
+        while vacio and (i > self.__getLongitudOriginal() - self.__getLongitudOriginal()):
+            vacio = self[i] is None
+            i-=1
+
+        return vacio
 
     #GETTERS SIMPLES
+    def getTipoExpansion(self) -> TipoExpansion:
+        """Obtiene el tipo de Expansion
+        
+        **return**
+            -   (TipoExpansion) AUTOMATICA, MANUAL, DESACTIVADA
+        """
+        return self.__tipoExpansion
+
+    #GETTERS COMPLEJOS
     def getLongitud(self) -> int:
         """Obtiene la longitud del vector
         
         **return**
             -   (int) longitud del vector
         """
-
         return len(self)
-
-    #GETTERS COMPLEJOS
+    
     def getCantidadElementos(self) -> int:
         """Obtiene la cantidad de elementos en este vector
         
@@ -371,6 +465,18 @@ class Vector(Generic[T], TypeStruct):
         return self.getLongitud() - 1
     
     #SETTERS INTERNOS
+    def __setTipoExpansion(self, tipoExpansion:TipoExpansion) -> None:
+        """Setea el tipo de expansión del vector
+        
+        **parameters**
+            -   tipoExpansion (TipoExpansion): DESACTIVADA, AUTOMATICA, MANUAL
+        
+        **excepciones**
+            -   **TypeError**: Si el parametro ingresado no es un tipo de expansión
+        """
+        validarTipoObjeto(TipoExpansion, tipoExpansion, "Ingresa un tipo de Expansión valido")
+        self.__tipoExpansion = tipoExpansion
+
     def __setLongitudOriginal(self, longitud:int) -> None:
         """Setea la longtitud del vector al momento de crearlo
         

@@ -1,5 +1,6 @@
 from typing import TypeVar
 from enum import Enum
+from abc import ABC
 
 T = TypeVar("T")
 
@@ -63,7 +64,7 @@ def validarTipo(tipo:type, mensaje:str = None, error:Exception = TypeError):
     mensaje = crearMensaje("Ingresa un tipo type", mensaje)
     validarError(error)
     
-    if not isinstance(tipo, type) and not isinstance(tipo, Enum):
+    if not isinstance(tipo, type) and not isinstance(tipo, Enum) and not isinstance(tipo, ABC):
         raise error(mensaje)
 
 def validarTipoObjeto(tipo:type, objeto:T, mensaje:str = None, error:Exception = TypeError):

@@ -10,6 +10,7 @@ Estructuras Incluidas:
     -   **Ordenador**
     -   **Grafo**
     -   **Digrafo**
+    
 
 Validaciones Incluidas:
     -   **validarTipo**
@@ -57,6 +58,7 @@ from .__Vector import Vector, Matriz
 from .__Grafo import Grafo, Digrafo
 from .__Ordenador import Ordenador, Visualizador
 from .__NoLineales import Cola, Pila, Heap
+from .__Arbol import ArbolBin
 from .__Validaciones import (FalloValidacion,
     validarTipo,
     validarVariosTipos,
@@ -71,10 +73,10 @@ from .__Validaciones import (FalloValidacion,
     validarRango,
     validarCondicion,
 )
-from .Excepciones.Generales import LlenoError, VacioError, ImplosionError, MetodoInvalidoError, LongitudNegativaError
-from .Excepciones.LinkedList import ErrorCursorDesactivado, ErrorCursorEncendido
-from .Excepciones.Grafo import TipoGrafoIncompatible, OperacionGrafosInvalida, AdyacenciaError, VerticeDobleError, VerticeNoEncontradoError
-from .Excepciones.Ordenador import Incomparable, GeneracionNegativaError, MaximoMinimoIntercambiados, MalditoHereje
+from .__Excepciones.Generales import LlenoError, VacioError, ImplosionError, MetodoInvalidoError, LongitudNegativaError
+from .__Excepciones.LinkedList import ErrorCursorDesactivado, ErrorCursorEncendido
+from .__Excepciones.Grafo import TipoGrafoIncompatible, OperacionGrafosInvalida, AdyacenciaError, VerticeDobleError, VerticeNoEncontradoError
+from .__Excepciones.Ordenador import Incomparable, GeneracionNegativaError, MaximoMinimoIntercambiados, MalditoHereje
 
 __all__ = [
     "Lista", 
@@ -87,6 +89,7 @@ __all__ = [
     "Cola", 
     "Pila", 
     "Heap", 
+    "ArbolBin",
     "TypeStruct", 
     "DataStruct",
     "validarTipo",

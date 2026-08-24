@@ -1,8 +1,8 @@
 from .__Validaciones import (TypeVar, Generic, ValidarTipoUnico, validarValorCompatible, 
                            validarCondicion, validarTipoObjeto, validarTiposPorHerencia)
-from .__Heredables import TypeStruct, DataStruct, Numerico
-from .Excepciones.Grafo import *
-from .Excepciones.Generales import VacioError
+from .__Heredables import TypeStruct
+from .__Excepciones.Grafo import *
+from .__Excepciones.Generales import VacioError
 from .__Vector import Matriz, Vector, PRIMERA_POSCICION
 from typing import Generator
 
@@ -458,7 +458,7 @@ class Grafo(Generic[V,E]):
     def __validarPeso(self):
         validarCondicion(not self.esPesado(), 
                          "Para este metodo, es necesario que el grafo esté pesado, osea que el tipo E no sea None", TipoGrafoIncompatible)
-        validarTiposPorHerencia(self.getTipoArista(), int, float, Numerico, 
+        validarTiposPorHerencia(self.getTipoArista(), int, float, 
                                 mensaje= "Para este metodo, el tipo de arista E debe ser un numero real (int, float o Numerico)", error= PesoInvalido)
 
     #ESTATICOS

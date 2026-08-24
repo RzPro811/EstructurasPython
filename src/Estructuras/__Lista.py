@@ -1,8 +1,8 @@
 from .__Validaciones import Generic, T, validarTipoObjeto, validarCondicion, validarRango
 from .__Heredables import DataStruct, TypeStruct
 from .__Vector import Vector
-from .Excepciones.Generales import *
-from .Excepciones.LinkedList import *
+from .__Excepciones.Generales import *
+from .__Excepciones.LinkedList import *
 
 MAXIMO_CURSORES = 3
 

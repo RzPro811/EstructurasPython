@@ -1,7 +1,7 @@
 from .__Lista import Vector, Lista, T
 from .__NoLineales import Heap, Cola, PRIMERA_POSCICION
 from .__Validaciones import validarTipoObjeto, validarMayorQue, validarOrden, validarNoNegativo
-from .Excepciones.Ordenador import*
+from .__Excepciones.Ordenador import*
 from random import randint
 
 visualizacion = True
@@ -12,6 +12,7 @@ try:
     from matplotlib.patches import Rectangle
 except ImportError as e:
     visualizacion = False
+
 
 LARGO_VISUALIZACION = 20
 DIGITOS = 10

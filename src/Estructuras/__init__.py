@@ -10,6 +10,7 @@ Estructuras Incluidas:
     -   **Ordenador**
     -   **Grafo**
     -   **Digrafo**
+    -   **ArbolBin**
     
 
 Validaciones Incluidas:
@@ -42,19 +43,20 @@ Excepciones:
     -   **Incomparable**
     -   **GeneracionNegativaError**
     -   **MaximoMinimoIntercambiados**
+    -   **ElementoNoEncontrado**
 
 Extras:
     -   **Visualizador**
     -   **TypeStruct**
     -   **DataStruct**
-    -   **Numerico**
+    -   **TipoExpansion**
     -   **FalloValidacion**
     -   **MalditoHereje**
 """
 
 from .__Heredables import TypeStruct, DataStruct
 from .__Lista import Lista
-from .__Vector import Vector, Matriz
+from .__Vector import Vector, Matriz, TipoExpansion
 from .__Grafo import Grafo, Digrafo
 from .__Ordenador import Ordenador, Visualizador
 from .__NoLineales import Cola, Pila, Heap
@@ -73,7 +75,7 @@ from .__Validaciones import (FalloValidacion,
     validarRango,
     validarCondicion,
 )
-from .__Excepciones.Generales import LlenoError, VacioError, ImplosionError, MetodoInvalidoError, LongitudNegativaError
+from .__Excepciones.Generales import LlenoError, VacioError, ImplosionError, MetodoInvalidoError, LongitudNegativaError, ElementoNoEncontrado
 from .__Excepciones.LinkedList import ErrorCursorDesactivado, ErrorCursorEncendido
 from .__Excepciones.Grafo import TipoGrafoIncompatible, OperacionGrafosInvalida, AdyacenciaError, VerticeDobleError, VerticeNoEncontradoError
 from .__Excepciones.Ordenador import Incomparable, GeneracionNegativaError, MaximoMinimoIntercambiados, MalditoHereje
@@ -82,6 +84,7 @@ __all__ = [
     "Lista", 
     "Vector",
     "Matriz", 
+    "TipoExpansion",
     "Grafo", 
     "Digrafo", 
     "Ordenador", 
@@ -110,6 +113,7 @@ __all__ = [
     "ImplosionError",
     "MetodoInvalidoError",
     "LongitudNegativaError",
+    "ElementoNoEncontrado",
     "ErrorCursorDesactivado",
     "ErrorCursorEncendido",
     "TipoGrafoIncompatible",

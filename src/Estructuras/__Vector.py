@@ -1,15 +1,20 @@
 from .__Validaciones import *
 from .__Excepciones.Generales import *
 from .__Heredables import TypeStruct
-from typing import Generator
+from typing import Generator, Generic
 from random import shuffle
 
+class TipoExpansion(Enum):
+    AUTOMATICA = "AUTOMATICA"
+    DESACTIVADA = "DESACTIVADA"
+    MANUAL = "MANUAL"
 
 class Vector(Generic[T], TypeStruct):
     #ATRIBUTOS
     __longitudOriginal: int
     __array: list[T]
     __expansible: bool
+    __tipoExpansion: TipoExpansion
 
     #CONSTRUCTOR
     def __init__(self, tipo:type, longitud:int, expandir:bool = False) -> Vector[T]:

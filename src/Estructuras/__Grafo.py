@@ -1,6 +1,6 @@
-from .__Validaciones import (TypeVar, Generic, ValidarTipoUnico, validarValorCompatible, 
+from .__Validaciones import (TypeVar,  ValidarTipoUnico, validarValorCompatible, 
                            validarCondicion, validarTipoObjeto, validarTiposPorHerencia)
-from .__Heredables import TypeStruct
+from .__Heredables import TypeStruct, Generic
 from .__Excepciones.Grafo import *
 from .__Excepciones.Generales import VacioError
 from .__Vector import Matriz, Vector, PRIMERA_POSCICION

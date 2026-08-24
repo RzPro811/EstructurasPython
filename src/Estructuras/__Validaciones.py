@@ -1,4 +1,4 @@
-from typing import Generic, TypeVar
+from typing import TypeVar
 from enum import Enum
 
 T = TypeVar("T")

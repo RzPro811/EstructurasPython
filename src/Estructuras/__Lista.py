@@ -1,5 +1,5 @@
-from .__Validaciones import Generic, T, validarTipoObjeto, validarCondicion, validarRango
-from .__Heredables import DataStruct, TypeStruct
+from .__Validaciones import  T, validarTipoObjeto, validarCondicion, validarRango
+from .__Heredables import DataStruct, TypeStruct, Generic
 from .__Vector import Vector
 from .__Excepciones.Generales import *
 from .__Excepciones.LinkedList import *

@@ -1,5 +1,5 @@
-from .__Validaciones import validarTipo, validarTipoObjeto, validarCondicion, Generic, T, FalloValidacion
-
+from .__Validaciones import validarTipo, validarTipoObjeto, validarCondicion, T, FalloValidacion
+from typing import Generic
 
 #TYPE STRUCT ------------------------------------------------------------------------------------------- 
 class TypeStruct:

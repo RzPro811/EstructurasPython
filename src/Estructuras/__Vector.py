@@ -1,10 +1,9 @@
-from .__Validaciones import T, Generic, ValidarTipoUnico, validarTipoObjeto, validarRango, validarNoNegativo, validarCondicion, validarMayorQue
+from .__Validaciones import *
 from .__Excepciones.Generales import *
 from .__Heredables import TypeStruct
 from typing import Generator
 from random import shuffle
 
-PRIMERA_POSCICION = 0
 
 class Vector(Generic[T], TypeStruct):
     #ATRIBUTOS
@@ -13,7 +12,7 @@ class Vector(Generic[T], TypeStruct):
     __expansible: bool
 
     #CONSTRUCTOR
-    def __init__(self, tipo:type, longitud:int, expandir:bool = False):
+    def __init__(self, tipo:type, longitud:int, expandir:bool = False) -> Vector[T]:
         """Dado un tipo de vector y una longitud crea un vector del tipo de dato ingresado
         
         **parameters**
@@ -35,7 +34,8 @@ class Vector(Generic[T], TypeStruct):
             cadena += f"{item}, "
 
         return cadena[:-2] + " >"
-    def __repr__(self):
+    
+    def __repr__(self) -> str:
         return self.__str__()
 
     def __len__(self) -> int:
@@ -49,51 +49,13 @@ class Vector(Generic[T], TypeStruct):
         self.__validarIndice(key)
         return self.__array[key]
     
-    def __setitem__(self, key:int, value:T):
+    def __setitem__(self, key:int, value:T) -> None:
         self.__validarIndice(key)
         self.__validarEntrada__(value, True)
         self.__array[key] = value
 
     #METODOS DE CLASE
-    def estaVacio(self) -> bool:
-        """Verifica que el vector este vacío
-        
-        **return**
-            -   (bool) Verdadero si todos los elementos en el vector son null, falso si al menos uno no lo es
-        """
-        vacio = True
-        i = PRIMERA_POSCICION
-
-        while vacio and (i <= self.__getPoscicionFinal()):
-            vacio = self[i] is None
-            i+=1
-
-        return vacio
-    
-    def estaLleno(self) -> bool:
-        """Verifica que el vector este lleno
-        
-        **return**
-            -   (bool) Verdadero si ningun elemento del vector es null, falso si al menos uno lo es
-        """
-        lleno = True
-        i = self.__getPoscicionFinal()
-
-        while lleno and i >= PRIMERA_POSCICION:
-            lleno = self[i] is not None
-            i-=1
-        
-        return lleno
-
-    def esExpansible(self) -> bool:
-        """Valida que el vector se pueda expandir al llenarse
-        
-        **return**
-            -  (bool) si el vector se expande al llenarse, falso si no
-        """
-        return self.__expansible
-    
-    def agregar(self, elemento:T):
+    def agregar(self, elemento:T) -> None:
         """Agrega un nuevo elemento al vector en la primera posicion que sea None
         
         **parameters**
@@ -163,7 +125,7 @@ class Vector(Generic[T], TypeStruct):
         return elemento
 
 
-    def intercambiar(self, indice:int, jndice:int):
+    def intercambiar(self, indice:int, jndice:int) -> None:
         """Dadas dos posciciones del vector, intercambia los elementos en esas dos posciciones
         
         **parameters**
@@ -181,27 +143,27 @@ class Vector(Generic[T], TypeStruct):
         self[indice] = self[jndice]
         self[jndice] = aux
 
-    def mezclar(self):
+    def mezclar(self) -> None:
         """Mezcla los elementos en el vector, por mera diversion"""
         shuffle(self.__array) 
 
-    def invertir(self):
+    def invertir(self) -> None:
         """Invierte la lista poniendo los datos en la poscicion n en la poscion longitud - n"""
         for i in range(self.getLongitud()//2):
             self.intercambiar(i, self.getLongitud()-1-i)
 
-    def vaciar(self):
+    def vaciar(self) -> None:
         """Vacia el vector"""
         self.__array = self.__generarVector(self.__getLongitudOriginal())
 
-    def copiar(self):
+    def copiar(self) -> Vector[T]:
         copia = Vector(self.getType(), self.__getLongitudOriginal(), self.esExpansible())
 
         copia.__array = self.__array.copy()
 
         return copia
 
-    def copiarContendio(self, vector:Vector[T]):
+    def copiarContendio(self, vector:Vector[T]) -> None:
         """Dado un vector vacio, copia el contenido de este vector al otro vector
         
         **parameters**
@@ -219,8 +181,6 @@ class Vector(Generic[T], TypeStruct):
         
         for i in range(self.getLongitud()):
             vector[i] = self[i]
-
-
 
     #METODOS INTERNOS
     def __generarVector(self, longitud:int) -> list[T]:
@@ -249,33 +209,114 @@ class Vector(Generic[T], TypeStruct):
 
         return vacio
 
-    def __expandir(self):
+    def __expandir(self) -> None:
         """Expande el vector"""
         self.__array.extend(self.__generarVector(self.__getLongitudOriginal()))
 
-    def __contraer(self):
+    def __contraer(self) -> None:
         """Contrae el vector"""
         for i in range(self.__getLongitudOriginal()):
             self.__array.pop()
 
+    def __buscar(self, item:T) -> int:
+        """Dado un item, lo busca en el vector mediante una busqueda lineal
+        
+        **parameters**
+            -   item (T)
+
+        **return**
+            -   (int) indice del item si está en el vector, -1 si no
+        """
+        encontrado = False
+        i = 0
+
+        while not encontrado and (i <= self.__getPoscicionFinal()):
+            if (self[i] == item):
+                encontrado = True
+            else:
+                i+=1
+
+        if not encontrado:
+            return NO_ENCONTRADO
+        else: return i
+
     #VALIDACIONES
-    def __validarIndice(self, indice:int):
+    def __validarIndice(self, indice:int) -> None:
         """Valida que el indice se encuentre el rango del vector"""
         validarRango(indice, PRIMERA_POSCICION,self.__getPoscicionFinal(),
                      mensaje= f"Ingresa un valor entre {PRIMERA_POSCICION} y {self.__getPoscicionFinal()}")
 
-    def __validarExpansible(self):
+    def __validarExpansible(self) -> None:
         """Valida que el vector se pueda expandir"""
         validarCondicion(not self.esExpansible(),
                          "El vector está lleno y no se puede expandir", LlenoError)
 
-    def __validarNoVacio(self):
+    def __validarNoVacio(self) -> None:
         """Valida que el vector no este vacío"""
         validarCondicion(self.estaVacio(), "El vector está vacío", VacioError)
 
-    #GETTERS
+    #FLAGS
+    def estaVacio(self) -> bool:
+        """Verifica que el vector este vacío
+        
+        **return**
+            -   (bool) Verdadero si todos los elementos en el vector son null, falso si al menos uno no lo es
+        """
+        vacio = True
+        i = PRIMERA_POSCICION
 
-    #Atributos Calculables
+        while vacio and (i <= self.__getPoscicionFinal()):
+            vacio = self[i] is None
+            i+=1
+
+        return vacio
+    
+    def estaLleno(self) -> bool:
+        """Verifica que el vector este lleno
+        
+        **return**
+            -   (bool) Verdadero si ningun elemento del vector es null, falso si al menos uno lo es
+        """
+        lleno = True
+        i = self.__getPoscicionFinal()
+
+        while lleno and i >= PRIMERA_POSCICION:
+            lleno = self[i] is not None
+            i-=1
+        
+        return lleno
+
+    def estaElItem(self, item) -> bool:
+        """Verifica que un item se encuentre en el vector
+        
+        **parameters**
+            -   item (T): puede ser None
+        
+        **excepciones**
+            -   **TypeError**: si el item ingresado no es None o del tipo ingresado T
+        """
+        self.__validarEntrada__(item, True)
+        return self.__buscar(item) != NO_ENCONTRADO
+
+    def esExpansible(self) -> bool:
+        """Valida que el vector se pueda expandir al llenarse
+        
+        **return**
+            -  (bool) si el vector se expande al llenarse, falso si no
+        """
+        return self.__expansible
+
+    #GETTERS SIMPLES
+    def getLongitud(self) -> int:
+        """Obtiene la longitud del vector
+        
+        **return**
+            -   (int) longitud del vector
+        """
+
+        return len(self)
+
+    #GETTERS COMPLEJOS
     def getCantidadElementos(self) -> int:
         """Obtiene la cantidad de elementos en este vector
         
@@ -290,16 +331,23 @@ class Vector(Generic[T], TypeStruct):
         
         return elementos
 
-    def __getPoscicionFinal(self) -> int:
-        """Obtiene el indice de la ultima poscicion
+    def getIndice(self, item:T) -> int:
+        """Dado un item en el vector, retorna el indice del vector
         
-        **return**
-            -   (int) longitud - 1
+        **parameters**
+            -   item (T): Debe encontrarse en el vector 
+
+        **excepciones**
+            -   **TypeError**: Si el item ingresado no es del tipo ingresado T
+            -   **ElementoNoEncontrado**: Si el item no está en el vector
         """
-        return self.getLongitud() - 1
+        self.__validarEntrada__(item)
+        indice = self.__buscar(item)
 
+        validarValorCompatible(indice, NO_ENCONTRADO, "Este elemento no se encuentra en el vector", ElementoNoEncontrado)
+        return indice
 
-    #Atributos reales
+    #GETTERS SIMPLES INTERNOS
     def __getLongitudOriginal(self) -> int:
         """Obtiene la longitud original del vector antes de expandirse
         
@@ -307,18 +355,18 @@ class Vector(Generic[T], TypeStruct):
             -   (int) longitud ingresada por parametro
         """
         return self.__longitudOriginal
-    
-    def getLongitud(self) -> int:
-        """Obtiene la longitud del vector
+
+    #GETTERS COMPLEJOS INTERNOS
+    def __getPoscicionFinal(self) -> int:
+        """Obtiene el indice de la ultima poscicion
         
         **return**
-            -   (int) longitud del vector
+            -   (int) longitud - 1
         """
-
-        return len(self)
-
-    #SETTERS
-    def __setLongitudOriginal(self, longitud:int):
+        return self.getLongitud() - 1
+    
+    #SETTERS INTERNOS
+    def __setLongitudOriginal(self, longitud:int) -> None:
         """Setea la longtitud del vector al momento de crearlo
         
         **parameters**
@@ -375,120 +423,6 @@ class Matriz(Generic[T], TypeStruct):
                 yield item
 
     #METODOS DE CLASE
-    def estaLleno(self) -> bool:
-        """Verifica que la matriz esté llena
-        
-        **retunr**
-            -   (bool) verdadero si no hay valores None en la matriz, falso si hay al menos un item None
-        """
-        lleno = True
-
-        i =self.__getUltimaPosColu()
-
-        while lleno and (i >= PRIMERA_POSCICION):
-            j = self.__getUltimaPosFila()
-
-            while lleno and (j >= PRIMERA_POSCICION):
-                lleno = self.getItem(i,j) is not None
-                j-=1
-
-            i-=1
-
-        return lleno
-    
-    def filaLlena(self, indice:int) -> bool:
-        self.__validarIndiceColu(indice)
-        i = PRIMERA_POSCICION
-        llena = True
-
-        while llena and (i < self.getLongitudFila()):
-            llena = self.getItem(indice, i) is not None
-            i+=1
-
-        return llena
-    
-    def columnaLlena(self, indice:int) -> bool:
-        self.__validarIndiceFila(indice)
-        i = PRIMERA_POSCICION
-        llena = True
-
-        while llena and (i < self.getLongitudColu()):
-            llena = self.getItem(i, indice) is not None
-            i+=1
-
-        return llena
-
-    def estaVacio(self) -> bool:
-        """Verifica que la matriz esté vacía
-        
-        **return**
-            -   (bool) Verdadero si todos los elementos son None, falso si al menos uno no lo es
-        """
-        vacio = True
-
-        i = PRIMERA_POSCICION
-        
-        while vacio and (i<=self.__getUltimaPosColu()):
-            j = PRIMERA_POSCICION
-
-            while vacio and (j<= self.__getUltimaPosFila()):
-                vacio = self.getItem(i,j) is None
-                j+=1
-            i+=1
-
-        return vacio
-
-    
-    def filaVacia(self, indice:int) -> bool:
-        self.__validarIndiceColu(indice)
-        i = self.__getUltimaPosFila()
-        vacia = True
-
-        while vacia and (i >= PRIMERA_POSCICION):
-            vacia = self.getItem(indice, i) is None
-            i-=1
-
-        return vacia
-    
-    def columnaVacia(self, indice:int) -> bool:
-        self.__validarIndiceFila(indice)
-        i = self.__getUltimaPosColu()
-        vacia = True
-
-        while vacia and (i >= PRIMERA_POSCICION):
-            vacia = self.getItem(i, indice) is None
-            i-=1
-
-        return vacia
-            
-
-    def esCuadrada(self):
-        """Verifica que la matriz sea cuadrada
-        
-        **return**
-            -   (bool) Verdadero si las filas y las longitudes miden exactamente lo mismo, falso si no
-        """
-        return self.getLongitudFila() == self.getLongitudColu()
-    
-    def esSimetrica(self):
-        """Verifica que la matriz sea simetrica
-        
-        **return**
-            -   (bool) verdadero si, para poscicion (i,j) en la matriz, se encuentra el mismo elemento en la poscicion (j,i)
-            falso si al menos en una poscicion (i,j) hay un elemento distinto en la poscicion (j,i)
-        """
-        simetrica = self.esCuadrada()
-        i = PRIMERA_POSCICION
-
-        while simetrica and (i <= self.__getUltimaPosColu()):
-            j = i+1
-            while simetrica and (j <= self.__getUltimaPosFila):
-                simetrica = self.getItem(i,j) == self.getItem(j,i)
-                j+=1
-            i+=1
-
-        return simetrica
-
 
     def agregar(self, elemento:T):
         """Agrega un elemento en la primera poscicion vacía en la matriz
@@ -661,7 +595,123 @@ class Matriz(Generic[T], TypeStruct):
         validarNoNegativo(cantidad,False, "Ingresa una cantidad positiva para la expancion", ImplosionError)
         self.__validarEntrada__(datoInicial,True)
 
-    #GETTERS
+    #FLAGS    
+    def estaLleno(self) -> bool:
+        """Verifica que la matriz esté llena
+        
+        **retunr**
+            -   (bool) verdadero si no hay valores None en la matriz, falso si hay al menos un item None
+        """
+        lleno = True
+
+        i =self.__getUltimaPosColu()
+
+        while lleno and (i >= PRIMERA_POSCICION):
+            j = self.__getUltimaPosFila()
+
+            while lleno and (j >= PRIMERA_POSCICION):
+                lleno = self.getItem(i,j) is not None
+                j-=1
+
+            i-=1
+
+        return lleno
+    
+    def filaLlena(self, indice:int) -> bool:
+        self.__validarIndiceColu(indice)
+        i = PRIMERA_POSCICION
+        llena = True
+
+        while llena and (i < self.getLongitudFila()):
+            llena = self.getItem(indice, i) is not None
+            i+=1
+
+        return llena
+    
+    def columnaLlena(self, indice:int) -> bool:
+        self.__validarIndiceFila(indice)
+        i = PRIMERA_POSCICION
+        llena = True
+
+        while llena and (i < self.getLongitudColu()):
+            llena = self.getItem(i, indice) is not None
+            i+=1
+
+        return llena
+
+    def estaVacio(self) -> bool:
+        """Verifica que la matriz esté vacía
+        
+        **return**
+            -   (bool) Verdadero si todos los elementos son None, falso si al menos uno no lo es
+        """
+        vacio = True
+
+        i = PRIMERA_POSCICION
+        
+        while vacio and (i<=self.__getUltimaPosColu()):
+            j = PRIMERA_POSCICION
+
+            while vacio and (j<= self.__getUltimaPosFila()):
+                vacio = self.getItem(i,j) is None
+                j+=1
+            i+=1
+
+        return vacio
+
+    
+    def filaVacia(self, indice:int) -> bool:
+        self.__validarIndiceColu(indice)
+        i = self.__getUltimaPosFila()
+        vacia = True
+
+        while vacia and (i >= PRIMERA_POSCICION):
+            vacia = self.getItem(indice, i) is None
+            i-=1
+
+        return vacia
+    
+    def columnaVacia(self, indice:int) -> bool:
+        self.__validarIndiceFila(indice)
+        i = self.__getUltimaPosColu()
+        vacia = True
+
+        while vacia and (i >= PRIMERA_POSCICION):
+            vacia = self.getItem(i, indice) is None
+            i-=1
+
+        return vacia
+            
+
+    def esCuadrada(self):
+        """Verifica que la matriz sea cuadrada
+        
+        **return**
+            -   (bool) Verdadero si las filas y las longitudes miden exactamente lo mismo, falso si no
+        """
+        return self.getLongitudFila() == self.getLongitudColu()
+    
+    def esSimetrica(self):
+        """Verifica que la matriz sea simetrica
+        
+        **return**
+            -   (bool) verdadero si, para poscicion (i,j) en la matriz, se encuentra el mismo elemento en la poscicion (j,i)
+            falso si al menos en una poscicion (i,j) hay un elemento distinto en la poscicion (j,i)
+        """
+        simetrica = self.esCuadrada()
+        i = PRIMERA_POSCICION
+
+        while simetrica and (i <= self.__getUltimaPosColu()):
+            j = i+1
+            while simetrica and (j <= self.__getUltimaPosFila):
+                simetrica = self.getItem(i,j) == self.getItem(j,i)
+                j+=1
+            i+=1
+
+        return simetrica
+
+
+    #GETTERS COMPLEJOS
     def getCantidadElementos(self) -> int:
         elementos = 0
 
@@ -694,12 +744,13 @@ class Matriz(Generic[T], TypeStruct):
         self.__validarIndices(indice, jndice)
         return self.__array[indice][jndice]
 
+    #GETTERS COMPLEJOS INTERNOS
     def __getUltimaPosFila(self) -> int :
         return self.getLongitudFila() -1
     def __getUltimaPosColu(self) -> int :
         return self.getLongitudColu() -1
 
-    #SETTERS
+    #SETTERS COMPLEJOS
     def setItem(self, indice:int, jndice:int, elemento:T):
         self.__validarIndices(indice,jndice)
         self.__validarEntrada__(elemento, True)

@@ -3,6 +3,8 @@ from enum import Enum
 
 T = TypeVar("T")
 
+PRIMERA_POSCICION = 0
+NO_ENCONTRADO = -1
 #CLASES DE VERIFICACION -----------------------------------------------------------------------------------
 class FalloValidacion(Exception):
     def __init__(self, *args):

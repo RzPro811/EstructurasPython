@@ -493,10 +493,10 @@ class Vector(Generic[T], TypeStruct):
 #MATRIZ-----------------------------------------------------------------------------------------------------------------------------------------
 class Matriz(Generic[T], TypeStruct):
     #ATRIBUTOS
-    __array:Vector[Vector[T]]
+    __array:list[list[T]]
     
     #CONSTRUCTORES
-    def __init__(self, tipo:type, longitudColu:int, longitudFila:int):
+    def __init__(self, tipo:type, longitudColu:int, longitudFila:int) -> Matriz[T]:
         """Dado dos longitudes, colu y fila, y un tipo de dato, crea una matriz con ese tipo de datos
 
         **parameters**
@@ -511,23 +511,37 @@ class Matriz(Generic[T], TypeStruct):
         validarNoNegativo(longitudFila, False, "Ingrese una longitud Positiva", LongitudNegativaError)
         validarNoNegativo(longitudColu, False, "Ingrese una longitud Positiva", LongitudNegativaError)
 
-        self.__array = Vector(Vector,longitudColu)
+        self.__array = []
 
         for i in range(longitudColu):
-            self.__array[i] = Vector(tipo, longitudFila)
+            self.__array.append([])
+            for j in range(longitudFila):
+                self.__array[i].append(None)
 
         super().__init__(tipo)
 
     #METODOS GENERALES
-    def __str__(self) -> int:
+    def __str__(self) -> str:
         cadena = "\n"
 
         for fila in self.__array:
-            cadena += str(fila) + "\n"
+            fil = "< "
+            for item in fila:
+                fil += f"{item}, "
+
+            cadena += fil[:-2] + " >\n"
 
         return cadena
-    def __len__(self):
+
+    def __repr__(self) -> str:
+        cadena = "["
+        for fila in self.__array:
+            cadena+= str(fila)
+        return cadena
+    
+    def __len__(self) -> int:
         return self.getLongitudFila() * self.getLongitudColu()
+
     def __iter__(self) -> Generator[T]:
         for fila in self.__array:
             for item in fila:
@@ -535,7 +549,7 @@ class Matriz(Generic[T], TypeStruct):
 
     #METODOS DE CLASE
 
-    def agregar(self, elemento:T):
+    def agregar(self, elemento:T) -> None:
         """Agrega un elemento en la primera poscicion vacía en la matriz
         
         **parameters**
@@ -545,7 +559,8 @@ class Matriz(Generic[T], TypeStruct):
             -   **TypeError**: si el elemento ingresado no es del tipo ingresado T
         """
         self.__validarEntrada__(elemento)
-        self.__validarNoLleno(elemento)
+        self.__validarNoLleno()
+
         agregado = False
         i = PRIMERA_POSCICION
 
@@ -562,7 +577,18 @@ class Matriz(Generic[T], TypeStruct):
             
             i+=1
 
-    def agregarEnFila(self, indice:int, elemento:T):
+    def agregarEnFila(self, indice:int, elemento:T) -> None:
+        """Dado un elemento y un indice de fila, añade el elemento a la ultima poscición vacía de esa fila
+        
+        **parameters**
+            -   indice (int): entre 0 y la longitud de las filas - 1
+            -   elemento (T)
+        
+        **excepciones**
+            -   **TypeError**: si ningun parametro ingresado es del tipo especificado
+            -   **IndexError**: si el indice se sale del rango especificado
+            -   **LlenoError**: si la fila está llena
+        """
         self.__validarEntrada__(elemento)
         self.__validarFilaNoLlena(indice)
 
@@ -574,7 +600,18 @@ class Matriz(Generic[T], TypeStruct):
                 agregado = True
                 self.setItem(indice,i,elemento) 
 
-    def agregarEnColumna(self, indice:int, elemento:T):
+    def agregarEnColumna(self, indice:int, elemento:T) -> None:
+        """Dado un elemento y un indice de columna, añade el elemento a la ultima poscición vacía de esa columna
+        
+        **parameters**
+            -   indice (int): entre 0 y la longitud de las columnas - 1
+            -   elemento (T)
+        
+        **excepciones**
+            -   **TypeError**: si ningun parametro ingresado es del tipo especificado
+            -   **IndexError**: si el indice se sale del rango especificado
+            -   **LlenoError**: si la columna está llena
+        """
         self.__validarEntrada__(elemento)
         self.__validarColumnaNoLlena(indice)
 
@@ -587,6 +624,19 @@ class Matriz(Generic[T], TypeStruct):
                 self.setItem(i,indice,elemento) 
 
     def remover(self, indice:int, jndice:int) -> T:
+        """Dado un indice columna y un indice fila, elimina el elemento en la poscición ingresada
+                
+        **parameters**
+            -   indice (int): entre 0 y la longitud de las columnas - 1
+            -   jndice (int): entre 0 y la longitud de las filas - 1
+        
+        **return**
+            -   (T) elemento en la poscición ingresada
+        
+        **excepciones**
+            -   **TypeError**: si el indice ingresado no es un int
+            -   **IndexError**: si el indice se sale del rango especificado
+        """
         self.__validarIndices(indice,jndice)
 
         elemento = self.getItem(indice,jndice)
@@ -595,6 +645,11 @@ class Matriz(Generic[T], TypeStruct):
         return elemento
 
     def copiar(self) -> Matriz[T]:
+        """Crea una copia exacta de la matriz
+        
+        **return**
+            -   (Matriz[T]) Matriz con los mismo elementos y mismas dimensiones que la matriz original
+        """
         matriz = Matriz(self.getType(),self.getLongitudColu(), self.getLongitudFila())
         
         for item in self:
@@ -602,109 +657,195 @@ class Matriz(Generic[T], TypeStruct):
 
         return matriz
 
-    def expandirFilas(self, cantidad:int = 1, datoInicial:T = None):
-        self.__validarExpansion(cantidad, datoInicial)
+    def expandirFilas(self, cantidad:int = 1, datoInicial:T = None) -> None:
+        """Expande las filas de la matriz 
 
-        longitudFilaNueva = self.getLongitudFila() + cantidad
+        **parameters**
+            -   cantidad (int): por defecto 1. Si ingresa un valor (que debe ser positivo), se expandirá esa cantidad de veces 
+            -   datoInicial (T): por defecto None. Si ingresa otro valor, entonces todos los espacios creados tendrán ese valor por defecto
 
-        for i in range(self.getLongitudColu()):
-            expansion = self.__generarFila(datoInicial,longitudFilaNueva)
-            self.__array[i].copiarContendio(expansion)
-            self.__array[i] = expansion
+        **excepciones**
+            -   **TypeError**: si algun dato ingresado por parametro no pertenece al tipo especficado
+            -   **ImplosionError**: si la cantidad ingresada es menor o igual que cero
+        """
+        self.__validarEntrada__(datoInicial,True)
+        self.__validarExpansion(cantidad)
 
-    def expandirColumnas(self, cantidad:int = 1, datoInicial:T = None):
-        self.__validarExpansion(cantidad, datoInicial)
+        for fila in self.__array:
+            for i in range(cantidad):
+                fila.append(datoInicial)
 
-        longitudColumnaNueva = self.getLongitudColu() + cantidad
-        expansion = Vector(Vector,longitudColumnaNueva)
-        
-        for i in range(longitudColumnaNueva):
-            if i < self.getLongitudColu():
-                expansion[i] = self.__array[i]
-            else:
-                expansion[i] = self.__generarFila(datoInicial,self.getLongitudFila())
+    def expandirColumnas(self, cantidad:int = 1, datoInicial:T = None) -> None:
+        """Expande las columnas de la matriz 
 
-        self.__array = expansion
+        **parameters**
+            -   cantidad (int): por defecto 1. Si ingresa un valor (que debe ser positivo), se expandirá esa cantidad de veces 
+            -   datoInicial (T): por defecto None. Si ingresa otro valor, entonces todos los espacios creados tendrán ese valor por defecto
 
-    def expandirMatriz(self, expansionFila:int = 1, expansionColu:int = 1, datoInicial:T = None):
+        **excepciones**
+            -   **TypeError**: si algun dato ingresado por parametro no pertenece al tipo especficado
+            -   **ImplosionError**: si la cantidad ingresada es menor o igual que cero
+        """
+        self.__validarEntrada__(datoInicial,True)
+        self.__validarExpansion(cantidad)
+
+        self.__array.append([datoInicial]*self.getLongitudFila())
+
+    def expandirMatriz(self, expansionFila:int = 1, expansionColu:int = 1, datoInicial:T = None) -> None:
+        """Expande las filas y las columnas de la matriz 
+
+        **parameters**
+            -   expansionFila (int): por defecto 1. Si ingresa un valor (que debe ser positivo), se expandirá esa cantidad de veces 
+            -   expansionColu (int): por defecto 1. Si ingresa un valor (que debe ser positivo), se expandirá esa cantidad de veces 
+            -   datoInicial (T): por defecto None. Si ingresa otro valor, entonces todos los espacios creados tendrán ese valor por defecto
+
+        **excepciones**
+            -   **TypeError**: si algun dato ingresado por parametro no pertenece al tipo especficado
+            -   **ImplosionError**: si la cantidad ingresada es menor o igual que cero
+        """
         self.expandirColumnas(expansionColu, datoInicial)
         self.expandirFilas(expansionFila, datoInicial)
 
     def eliminarFila(self, indice:int) -> Vector[T]:
-        filaEliminada = self.getFila(indice)
-        contraccion = Vector(Vector, self.getLongitudColu() - 1)
-
-        for i in range(contraccion.getLongitud()):
+        """Dado un indice fila, elimina la fila en esa poscición y retorna un Vector con esos datos
+        
+        **parameters**
+            -   indice (int): entre 0 y la longitud de las columnas - 1
+        
+        **return**
+            -   (Vector[T]) Vector con los datos de la fila eliminada
             
-            if i < indice:
-                contraccion[i] = self.getFila(i)
-            else:
-                contraccion[i] = self.getFila(i+1)
+        **excepciones**
+            -   **TypeError**: si el indice ingresado no es un int
+            -   **IndexError**: si el indice se sale del rango especificado
+        """
+        self.__validarIndiceFila(indice)
+        return Vector.crearConIterable(self.__array.pop(indice))
 
-        self.__array = contraccion
-
-        return filaEliminada
 
     def eliminarColumna(self, indice:int) -> Vector[T]:
-        columnaEliminada = self.getColumna(indice)
-        contraccion = self.getLongitudFila() - 1
+        """Dado un indice columna, elimina la columna en esa poscición y retorna un Vector con esos datos
+        
+        **parameters**
+            -   indice (int): entre 0 y la longitud de las filas - 1
+        
+        **return**
+            -   (Vector[T]) Vector con los datos de la columna eliminada
+            
+        **excepciones**
+            -   **TypeError**: si el indice ingresado no es un int
+            -   **IndexError**: si el indice se sale del rango especificado
+        """
+        columnaEliminada = Vector(self.getType(), self.getLongitudColu())
 
         for i in range(self.getLongitudColu()):
-            filaNueva = self.__generarFila(None, contraccion)
-            for j in range(filaNueva.getLongitud()):
-                if j < indice:
-                    filaNueva[j] = self.__array[i][j]
-                else:
-                    filaNueva[j] = self.__array[i][j+1]
-
-            self.__array[i] = filaNueva
+            columnaEliminada[i] = self.__array[i].pop(indice)
 
         return columnaEliminada
 
-    def contraerMatriz(self, indice:int, jndice:int):
+    def contraerMatriz(self, indice:int, jndice:int) -> None:
+        """Dado un indice columna y un indice columna, elimina esa matriz y esa columna
+        
+        **parameters**
+            -   indice (int): entre 0 y la longitud de las filas - 1
+            
+        **excepciones**
+            -   **TypeError**: si el indice ingresado no es un int
+            -   **IndexError**: si el indice se sale del rango especificado
+        """
         self.eliminarColumna(indice)
         self.eliminarFila(jndice)
 
-    #METODOS INTERNOS
-
-    def __generarFila(self, datoinicial:T, longitud:int) -> Vector[T]: 
-        expansion = Vector(self.getType(),longitud)
-        
-        if datoinicial is not None:
-            for i in range(longitud):
-                expansion[i] = datoinicial
-
-        return expansion
-    
-
     #VALIDACIONES
-    def __validarIndiceFila(self, indice:int):
+    def __validarIndiceFila(self, indice:int) -> None:
+        """Valida que un indice ingresado, pueda ser un indice fila
+        
+        **parameters**
+            -   indice (int): entre 0 y la longitud de las columnas - 1
+        
+        **excepciones**
+            -   **TypeError**: si el indice ingresado no es un int
+            -   **IndexError**: si el indice se sale del rango especificado
+        """
+        validarTipoObjeto(int, indice, "Ingresa un indice int")
         validarRango(indice,PRIMERA_POSCICION,self.__getUltimaPosFila(),
                      mensaje= f"Ingresa un poscicion entre {PRIMERA_POSCICION} y {self.__getUltimaPosFila()}")
 
-    def __validarIndiceColu(self, indice:int):
+    def __validarIndiceColu(self, indice:int) -> None:
+        """Valida que un indice ingresado, pueda ser un indice columna
+        
+        **parameters**
+            -   indice (int): entre 0 y la longitud de las filas - 1
+        
+        **excepciones**
+            -   **TypeError**: si el indice ingresado no es un int
+            -   **IndexError**: si el indice se sale del rango especificado
+        """
         validarRango(indice,PRIMERA_POSCICION,self.__getUltimaPosColu(),
                      mensaje= f"Ingresa un poscicion entre {PRIMERA_POSCICION} y {self.__getUltimaPosColu()}")
         
-    def __validarIndices(self, indice:int, jndice:int):
+    def __validarIndices(self, indice:int, jndice:int) -> None:
+        """Valida que dos indice ingresados, puedan ser un indices columna y fila validos (en ese orden)
+        
+        **parameters**
+            -   indice (int): entre 0 y la longitud de las columnas - 1
+            -   jndice (int): entre 0 y la longitud de las filas - 1
+        
+        **excepciones**
+            -   **TypeError**: si el indice ingresado no es un int
+            -   **IndexError**: si el indice se sale del rango especificado
+        """
         self.__validarIndiceColu(indice)
         self.__validarIndiceFila(jndice)
 
-    def __validarNoLleno(self):
+    def __validarNoLleno(self) -> None:
+        """Valida que la matriz no este llena
+        
+        **excepciones**
+            -   **LlenoError**: si la matriz está llena
+        """
         validarCondicion(self.estaLleno(),"La matriz está llena", LlenoError)
 
-    def __validarFilaNoLlena(self,indice):
+    def __validarFilaNoLlena(self,indice) -> None:
+        """Valida que una fila no esté llena
+
+        **parameters**
+            -   indice (int): entre 0 y la longitud de las filas - 1
+        
+        **excepciones**
+            -   **TypeError**: si el indice ingresado no es un int
+            -   **IndexError**: si el indice se sale del rango especificado
+            -   **LlenoError**: si la fila está llena
+        """
         self.__validarIndiceColu(indice)
         validarCondicion(self.filaLlena(indice),f"La fila {indice} está llena", LlenoError)
         
-    def __validarColumnaNoLlena(self,indice):
+    def __validarColumnaNoLlena(self,indice) -> None:
+        """Valida que una columna no esté llena
+        
+        **parameters**
+            -   indice (int): entre 0 y la longitud de las columnas - 1
+        
+        **excepciones**
+            -   **TypeError**: si el indice ingresado no es un int
+            -   **IndexError**: si el indice se sale del rango especificado
+            -   **LlenoError**: si la columna está llena
+        """
         self.__validarIndiceFila(indice)
         validarCondicion(self.columnaLlena(indice),f"La fila {indice} está llena", LlenoError)
         
-    def __validarExpansion(self, cantidad:int, datoInicial:T):        
+    def __validarExpansion(self, cantidad:int) -> None:        
+        """Dado una cantidad y un dato inicial, valida que la expansión se lleve a cabo
+        
+        **parameters**
+            -   cantidad (int): positiva
+
+        **excepciones**
+            -   **TypeError**: si la cantidad ingresada por parametro no es un int
+            -   **ImplosionError**: si la cantidad ingresada es menor o igual que cero
+        """
         validarTipoObjeto(int, cantidad, "Ingresa una cantidad int")
-        validarNoNegativo(cantidad,False, "Ingresa una cantidad positiva para la expancion", ImplosionError)
-        self.__validarEntrada__(datoInicial,True)
+        validarNoNegativo(cantidad, False, "Ingresa una cantidad positiva para la expancion", ImplosionError)
 
     #FLAGS    
     def estaLleno(self) -> bool:
@@ -729,6 +870,18 @@ class Matriz(Generic[T], TypeStruct):
         return lleno
     
     def filaLlena(self, indice:int) -> bool:
+        """Verfiida que una fila esté llena
+
+        **parameters**
+            -   indice (int): entre 0 y la longitud de las columnas - 1
+        
+        **return**
+            -   (bool) Verdadero si ningun elemento de la fila es None, falso si al menos uno lo es
+            
+        **excepciones**
+            -   **TypeError**: si el indice ingresado no es un int
+            -   **IndexError**: si el indice se sale del rango especificado
+        """
         self.__validarIndiceColu(indice)
         i = PRIMERA_POSCICION
         llena = True
@@ -740,6 +893,18 @@ class Matriz(Generic[T], TypeStruct):
         return llena
     
     def columnaLlena(self, indice:int) -> bool:
+        """Verfiida que una columna esté llena
+
+        **parameters**
+            -   indice (int): entre 0 y la longitud de las filas - 1
+        
+        **return**
+            -   (bool) Verdadero si ningun elemento de la columna es None, falso si al menos uno lo es
+            
+        **excepciones**
+            -   **TypeError**: si el indice ingresado no es un int
+            -   **IndexError**: si el indice se sale del rango especificado
+        """
         self.__validarIndiceFila(indice)
         i = PRIMERA_POSCICION
         llena = True
@@ -772,6 +937,18 @@ class Matriz(Generic[T], TypeStruct):
 
     
     def filaVacia(self, indice:int) -> bool:
+        """Verfiida que una fila esté vacía
+
+        **parameters**
+            -   indice (int): entre 0 y la longitud de las columnas - 1
+        
+        **return**
+            -   (bool) Verdadero si todos los elementos de la fila son None, falso si al menos uno no lo es
+            
+        **excepciones**
+            -   **TypeError**: si el indice ingresado no es un int
+            -   **IndexError**: si el indice se sale del rango especificado
+        """
         self.__validarIndiceColu(indice)
         i = self.__getUltimaPosFila()
         vacia = True
@@ -783,6 +960,18 @@ class Matriz(Generic[T], TypeStruct):
         return vacia
     
     def columnaVacia(self, indice:int) -> bool:
+        """Verfiida que una columna esté vacía
+
+        **parameters**
+            -   indice (int): entre 0 y la longitud de las filas - 1
+        
+        **return**
+            -   (bool) Verdadero si todos los elementos de la columna son None, falso si al menos uno no lo es
+            
+        **excepciones**
+            -   **TypeError**: si el indice ingresado no es un int
+            -   **IndexError**: si el indice se sale del rango especificado
+        """
         self.__validarIndiceFila(indice)
         i = self.__getUltimaPosColu()
         vacia = True
@@ -824,6 +1013,11 @@ class Matriz(Generic[T], TypeStruct):
 
     #GETTERS COMPLEJOS
     def getCantidadElementos(self) -> int:
+        """Obtiene la cantidad de elementos almacenados en la matriz
+        
+        **return**
+            -   (int) cantidad de elementos distintos de None en la matriz
+        """
         elementos = 0
 
         for item in self:
@@ -832,12 +1026,36 @@ class Matriz(Generic[T], TypeStruct):
 
         return elementos
     
-    def getFila(self, indice:int):
+    def getFila(self, indice:int) -> Vector[T]:
+        """Dado un indice, retorna la fila en esa poscición
+
+        **parameters**
+            -   indice (int): entre 0 y la longitud de las filas - 1
+        
+        **return**
+            -   (Vector[T]) vector con los elementos de esa fila
+            
+        **excepciones**
+            -   **TypeError**: si el indice ingresado no es un int
+            -   **IndexError**: si el indice se sale del rango especificado
+        """
         self.__validarIndiceColu(indice)
         
-        return self.__array[indice]
+        return Vector.crearConIterable(self.__array[indice])
 
-    def getColumna(self, indice:int):
+    def getColumna(self, indice:int) -> Vector[T]:
+        """Dado un indice, retorna la columna en esa poscición
+        
+        **parameters**
+            -   indice (int): entre 0 y la longitud de las columnas - 1
+        
+        **return**
+            -   (Vector[T]) vector con los elementos de esa columna
+            
+        **excepciones**
+            -   **TypeError**: si el indice ingresado no es un int
+            -   **IndexError**: si el indice se sale del rango especificado
+        """
         self.__validarIndiceFila(indice)
         vector = Vector(self.getType(),self.getLongitudColu())
 
@@ -846,23 +1064,66 @@ class Matriz(Generic[T], TypeStruct):
 
         return vector
 
-    def getLongitudFila(self) -> int :
+    def getLongitudFila(self) -> int:
+        """Obtiene la longitud de las filas
+        
+        **return**
+            -   (int) dimension fila
+        """
         return len(self.__array[PRIMERA_POSCICION])
-    def getLongitudColu(self) -> int :
+
+    def getLongitudColu(self) -> int:
+        """Obtiene la longitud de las columnas
+        
+        **return**
+            -   (int) dimensión columna   
+        """
         return len(self.__array)
 
     def getItem(self, indice:int, jndice:int) -> T:
+        """Dado dos indices, obtiene el valor en esa poscición
+        
+        **parameters**
+            -   indice (int): entre 0 y la longitud de las columnas - 1
+            -   jndice (int): entre 0 y la longitud de las filas - 1
+        
+        **excepciones**
+            -   **TypeError**: si los indices ingresados no son int
+            -   **IndexError**: si los indices se salen del rango especificado
+        """
         self.__validarIndices(indice, jndice)
         return self.__array[indice][jndice]
 
     #GETTERS COMPLEJOS INTERNOS
-    def __getUltimaPosFila(self) -> int :
+    def __getUltimaPosFila(self) -> int:
+        """Obtiene la ultima poscición de la fila
+        
+        **return**
+            -   (int) longitud fila - 1
+        """
         return self.getLongitudFila() -1
-    def __getUltimaPosColu(self) -> int :
+
+    def __getUltimaPosColu(self) -> int:
+        """Obtiene la ultima poscición de la colu
+        
+        **return**
+            -   (int) longitud colu - 1
+        """
         return self.getLongitudColu() -1
 
     #SETTERS COMPLEJOS
-    def setItem(self, indice:int, jndice:int, elemento:T):
+    def setItem(self, indice:int, jndice:int, elemento:T) -> None:
+        """Dado dos indices y un elemento, setea el valor en esa poscición
+        
+        **parameters**
+            -   indice (int): entre 0 y la longitud de las columnas - 1
+            -   jndice (int): entre 0 y la longitud de las filas - 1
+            -   elemento (T): puede ser None
+
+        **excepciones**
+            -   **TypeError**: si los indices ingresados no son int o el elemento no es del tipo ingresado T o None
+            -   **IndexError**: si los indices se salen del rango especificado
+        """
         self.__validarIndices(indice,jndice)
         self.__validarEntrada__(elemento, True)
         self.__array[indice][jndice] = elemento

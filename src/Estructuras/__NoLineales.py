@@ -1,6 +1,6 @@
 from .__Validaciones import T, validarCondicion
 from .__Heredables import TypeStruct, Generic
-from .__Vector import PRIMERA_POSCICION
+from .__Vector import PRIMERA_POSCICION, Generator
 from .__Excepciones.Generales import *
 from .__Lista import Lista
 
@@ -11,7 +11,7 @@ class Cola(Generic[T], TypeStruct):
     __cola:Lista[T]
 
     #CONSTRUCTOR
-    def __init__(self, tipo:type):
+    def __init__(self, tipo:type) -> Cola[T]:
         """Dado un tipo de elemento, crea una cola que almacena ese tipo de datos
         
         **parameters**
@@ -24,11 +24,15 @@ class Cola(Generic[T], TypeStruct):
         self.__cola = Lista(tipo)
 
     #METODOS GENERALES
-    def __str__(self):
+    def __str__(self) -> str:
         return "[COLA] "
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.__cola)
+
+    def __iter__(self) -> Generator[T]:
+        while not self.estaVacia():
+            yield self.quitar()
 
     #METODOS DE CLASE
     def estaVacia(self) -> bool:
@@ -39,7 +43,7 @@ class Cola(Generic[T], TypeStruct):
         """
         return self.__cola.estaVacia()
 
-    def agregar(self, elemento:T):
+    def agregar(self, elemento:T) -> None:
         """Agrega un elemento a la cola
         
         **parameters**
@@ -63,21 +67,30 @@ class Cola(Generic[T], TypeStruct):
         return self.__cola.quitarInicio()
     
     #VALIDACIONES
-    def __validarColaVacia(self):
+    def __validarColaVacia(self) -> None:
+        """Valida que la cola no esté vacía
+        
+        **excepciones**
+            -   **VacioError**: si la cola está vacía
+        """
         validarCondicion(self.estaVacia(), "La cola está vacía", VacioError)
 
     #GETTERS
-    def getLongitud(self):
+    def getLongitud(self) -> int:
+        """Obtiene la cantidad de elementos almacenados en la cola
+        
+        **return**
+            -   (int) cantidad de items en la cola
+        """
         return len(self)
 
 #PILA-------------------------------------------------------------------------------------------------------------------------------------------
-
 class Pila(Generic[T], TypeStruct):
     #ATRIBUTOS
     __pila:Lista[T]
 
     #CONSTRUCTOR
-    def __init__(self, tipo:type):
+    def __init__(self, tipo:type) -> Pila[T]:
         """Dado un tipo de elemento, crea una pila que almacena ese tipo de datos
         
         **parameters**
@@ -90,14 +103,18 @@ class Pila(Generic[T], TypeStruct):
         self.__pila = []
 
     #METODOS GENERALES
-    def __str__(self):
+    def __str__(self) -> str:
         return "[PILA]"
 
-    def __len__(self):
+    def __len__(self) -> int:
         return self.__pila.getLongitud()
 
+    def __iter__(self) -> Generator[T]:
+        while not self.estaVacia():
+            yield self.quitar()
+
     #METODOS DE CLASE
-    def estaVacia(self):
+    def estaVacia(self) -> bool:
         """Valida que la pila esté vacia
         
         **return**
@@ -105,7 +122,7 @@ class Pila(Generic[T], TypeStruct):
         """
         return self.__pila.estaVacia()
 
-    def agregar(self, elemento:T):
+    def agregar(self, elemento:T) -> None:
         """Agrega un elemento a la pila
     
         **parameters**
@@ -128,53 +145,50 @@ class Pila(Generic[T], TypeStruct):
         return self.__pila.quitarFinal()
     
     #VALIDACIONES
-    def __validarPilaVacia(self):
+    def __validarPilaVacia(self) -> None:
+        """Valida que la pila no esté vacía
+        
+        **excepciones**
+            -   **VacioError**: si la pila está vacía
+        """
         validarCondicion(self.estaVacia(), "La pila está vacía", VacioError)
 
     #GETTERS
-    def getLongitud(self):
+    def getLongitud(self) -> int:
+        """Obtiene la cantidad de elementos almacenados en la pila
+        
+        **return**
+            -   (int) cantidad de items en la pila
+        """
         return len(self)
 
 #HEAP-------------------------------------------------------------------------------------------------------------------------------------------
-class Heap(Generic[T], TypeStruct):#CONSTANTES
-
+class Heap(Generic[T], TypeStruct):
     #ATRIBUTOS
     __monton:list[T]
     __metodoOrdenamiento:function
 
     #CONSTRUCTORES
-    def __init__(self, tipo:type, metodo =None):
+    def __init__(self, tipo:type, metodo =None) -> Heap[T]:
         """Crea el heap
         
         **parameters**
             -   tipo (type) tipo de los datos a almacenar
+            -   metodo (function): metodo para ordenar los elementos del heap
         """
-        
         super().__init__(tipo)
         self.__setMetodo(metodo)
         self.__monton = [None]
 
     #METODOS GENERALES
     def __repr__(self) -> str:
-        """No tengo ni idea que hace esta cosa pero sirve bien para ver el contenido del heap al debuguear"""
         return str(self.__monton)
 
+    def __iter__(self) -> Generator[T]:
+        while not self.estaVacio():
+            yield self.quitar()
+
     #METODOS DE CLASE
-    def estaVacio(self) -> bool:
-        """Verifica que el heap este vacio
-        
-        **return**
-            -    (bool) Verdadero si todos los elementos son None, falso si al menos uno no es None"""
-        return (self.__getCapacidadMaxima() == 1) and (self.__getItem(PRIMERA_POSCICION) is None)
-
-    def estaCompleto(self) -> bool:
-        """Verifica que el heap este completo
-        
-        **return**
-            -   (bool) Verdadero si todos los subarboles del heap estan completos, falso si al menos uno no lo esta"""
-
-        return self.__subArbolCompleto(PRIMERA_POSCICION)
-
     def agregar(self, elemento:T):
         """Agrega un nuevo elemento en la ultima poscicion del heap
 
@@ -200,7 +214,7 @@ class Heap(Generic[T], TypeStruct):#CONSTANTES
             -   (T) elemento de la raiz
 
         **excepciones**
-            -   **ErrorRegistroVacio** si el heap esta vacio
+            -   **VacioError** si el heap esta vacio
         """
         validarCondicion(self.estaVacio(), "El Heap esta vacio", VacioError)
 
@@ -215,7 +229,6 @@ class Heap(Generic[T], TypeStruct):#CONSTANTES
         return elemento
 
     #METODOS INTERNOS
-
     def __estaLleno(self):
         """Verifica que el heap este lleno
         
@@ -444,7 +457,6 @@ class Heap(Generic[T], TypeStruct):#CONSTANTES
             self.__organizarHeap(poscicion,self.__ubicacionHijoIzq(poscicion))
 
     #METODOS ESTATICOS
-
     @staticmethod
     def ordenarPorMinimo(vector:list[Generic[T]], metodo = None):
         """dado un vector ingresado, se ordenan los elementos mediante el algoritmo HeapMinSort de menor a mayor.
@@ -481,6 +493,21 @@ class Heap(Generic[T], TypeStruct):#CONSTANTES
         except TypeError:
             raise TypeError("Para que funcione el ordenamiento, todos los elementos de la lista ingresada deben ser del mismo tipo")
                        
+    #FLAGS    
+    def estaVacio(self) -> bool:
+        """Verifica que el heap este vacio
+        
+        **return**
+            -    (bool) Verdadero si todos los elementos son None, falso si al menos uno no es None"""
+        return (self.__getCapacidadMaxima() == 1) and (self.__getItem(PRIMERA_POSCICION) is None)
+
+    def estaCompleto(self) -> bool:
+        """Verifica que el heap este completo
+        
+        **return**
+            -   (bool) Verdadero si todos los subarboles del heap estan completos, falso si al menos uno no lo esta"""
+
+        return self.__subArbolCompleto(PRIMERA_POSCICION)
 
     #GETTERS
     def __getCapacidadMaxima(self) -> int:
@@ -554,7 +581,7 @@ class Heap(Generic[T], TypeStruct):#CONSTANTES
     def __metodo(self, elemento:T):
         """Aplica el metodo de comparacion a un elemento del heap
 
-        PARAMETOS:
+        **parameters**:
             -   elemento (T): elemento en el heap
 
         **return**
@@ -563,7 +590,6 @@ class Heap(Generic[T], TypeStruct):#CONSTANTES
         return self.__metodoOrdenamiento(elemento)
 
     #SETTERS
-
     def __setRaiz(self, elemento:T):
         """Setea la raiz del heap
         

@@ -1,4 +1,4 @@
-from .__Validaciones import  T, validarTipoObjeto, validarCondicion, validarRango
+from .__Validaciones import  T, validarTipoObjeto, validarCondicion, validarRango, PRIMERA_POSCICION, NO_ENCONTRADO, validarNoNegativo, ValidarTipoUnico
 from .__Heredables import DataStruct, TypeStruct, Generic
 from .__Vector import Vector
 from .__Excepciones.Generales import *
@@ -13,7 +13,7 @@ class Nodo(DataStruct, Generic[T]):
     __siguiente:Nodo[T]
 
     #CONSTRUCTOR
-    def __init__(self, tipo:type, dato:T):
+    def __init__(self, tipo:type, dato:T) -> Nodo[T]:
         """Dado un tipo de dato y un dato, crea un nodo de lista
         
         **parameters**
@@ -28,7 +28,7 @@ class Nodo(DataStruct, Generic[T]):
         self.setSiguiente(None)
 
     #METODOS GENERALES
-    def __str__(self):
+    def __str__(self) -> str:
         cadena = ""
 
         if self.getAnterior() is not None:
@@ -40,15 +40,23 @@ class Nodo(DataStruct, Generic[T]):
             cadena+= f" - [{self.getSiguiente().getDato()}]"
 
         return cadena
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.__str__()
     
-    def __eq__(self, value:Nodo):
+    def __eq__(self, value:Nodo) -> bool:
         if type(value) is not Nodo: return False
         return self.getDato() == value.getDato()
 
+    #METODOS DE CLASE
+    def desconectarNodo(self) -> None:
+        """Desconecta el nodo"""
+        validarTipoObjeto(Nodo, self, "Ingrese un nodo")
+
+        self.setSiguiente(None)
+        self.setAnterior(None)
+
     #VALIDACIONES
-    def __validarConexion(self, nodo:Nodo[T]):
+    def __validarConexion(self, nodo:Nodo[T]) -> None:
         """Valida la coneccion con otro Nodo
         
         **parameters**
@@ -64,7 +72,7 @@ class Nodo(DataStruct, Generic[T]):
                          "Ingresa un nodo con el mismo tipo de dato", NodoInvalidoError)
 
     @staticmethod
-    def validarConeccion(nodo1:Nodo[T], nodo2:Nodo[T]):
+    def validarConeccion(nodo1:Nodo[T], nodo2:Nodo[T]) -> None:
         """Valida que dos nodos se puedan Conectar
         
         **parameters**
@@ -85,7 +93,7 @@ class Nodo(DataStruct, Generic[T]):
 
     #METODO ESTATICOS
     @staticmethod
-    def conectarNodos(nodoAnterior:Nodo[T], nodoSiguiente:Nodo[T]):
+    def conectarNodos(nodoAnterior:Nodo[T], nodoSiguiente:Nodo[T]) -> None:
         """Dado dos nodos, los conecta
         
         **parameters**
@@ -102,21 +110,6 @@ class Nodo(DataStruct, Generic[T]):
             nodoAnterior.setSiguiente(nodoSiguiente)
         if nodoSiguiente is not None:
             nodoSiguiente.setAnterior(nodoAnterior)
-
-    @staticmethod
-    def desconectarNodo(nodo:Nodo[T]):
-        """Desconecta un nodo ingresado
-        
-        **parameters**
-            -   nodo (Nodo[T])
-        
-        **excepciones**
-            -   **TypeError** si el nodo ingresado no es un nodo
-        """
-        validarTipoObjeto(Nodo, nodo, "Ingrese un nodo")
-
-        nodo.setSiguiente(None)
-        nodo.setAnterior(None)
 
     #GETTERS
     def getAnterior(self) -> Nodo[T]:
@@ -136,7 +129,7 @@ class Nodo(DataStruct, Generic[T]):
         return self.__siguiente
     
     #SETTERS
-    def setAnterior(self, anterior:Nodo[T]):
+    def setAnterior(self, anterior:Nodo[T]) -> None:
         """Setea un nodo como el anterior
 
         **parameters**
@@ -149,7 +142,7 @@ class Nodo(DataStruct, Generic[T]):
         self.__validarConexion(anterior)
         self.__anterior = anterior
 
-    def setSiguiente(self, siguiente:Nodo[T]):
+    def setSiguiente(self, siguiente:Nodo[T]) -> None:
         """Setea un nodo como el siguiente
 
         **parameters**
@@ -162,7 +155,7 @@ class Nodo(DataStruct, Generic[T]):
         self.__validarConexion(siguiente)
         self.__siguiente = siguiente
 
-    def setDato(self, dato:T):
+    def setDato(self, dato:T) -> None:
         """Seta el dato del nodo
         
         **parameters**
@@ -177,9 +170,10 @@ class Nodo(DataStruct, Generic[T]):
 class Cursor(TypeStruct,Generic[T]):
     #ATRIBUTOS
     __nodo:Nodo[T]
+    __poscicion:int
 
     #CONSTRUCTORES
-    def __init__(self, tipo:type):
+    def __init__(self, tipo:type) -> Cursor[T]:
         """Crea un cursor para una lista
         
         **parameters**
@@ -191,33 +185,28 @@ class Cursor(TypeStruct,Generic[T]):
         super().__init__(tipo)
         self.setNodo(None)
 
-    #METODOS GENERALES
-    def estaPrendido(self) -> bool:
-        """Verifica que el nodo esté prendido
-        
-        **return**
-            -   (bool) Verdadero si el nodo no es None, falso si es None
-        """
-        return self.getNodo() is not None
-
-    def activarCursor(self, nodo:Nodo[T]):
+    #METODOS DE CLASE
+    def activarCursor(self, nodo:Nodo[T], poscicionInicial:int) -> None:
         """Dado un nodo, activa el cursor y lo pone hasta esa poscicion
         
         **parameters**
             -   nodo (Nodo[T])
+            -   posciciónInicial (int): positiva o cero
 
         **excepciones**
-            -   **TypeError** si el parametro ingresado no es un None   
-            -   **ErrorCursorEncendido** si el cursor no está apagado
-            -   **NodoInvalidoError** si el nodo ingresado es None
+            -   **TypeError**: si los parametros ingresados no cumplen con los tipos establecidos   
+            -   **ErrorCursorEncendido**: si el cursor no está apagado
+            -   **NodoInvalidoError**: si el nodo ingresado es None
+            -   **IndexError**: si la poscición ingresada es negativa
         """        
         validarTipoObjeto(Nodo, nodo, "Ingresa un Nodo")
         self.validarCursorApagado()
         validarCondicion(nodo is None, "Ingresa un nodo no None para inicar el cursor", NodoInvalidoError)
         
         self.setNodo(nodo)
+        self.setPoscicion(poscicionInicial)
 
-    def desactivarCursor(self):
+    def desactivarCursor(self) -> None:
         """Apaga el cursor
         
         **excepciones**
@@ -225,8 +214,9 @@ class Cursor(TypeStruct,Generic[T]):
         """
         self.validarCursorPrendido()
         self.setNodo(None)
+        self.__apagar()
 
-    def avanzarNodo(self):
+    def avanzarNodo(self) -> None:
         """Mueve el cursor hacia el siguiente nodo. Si es el ultimo nodo de la lista, el cursor se apaga automaticamente
         
         **excepciones**
@@ -234,8 +224,9 @@ class Cursor(TypeStruct,Generic[T]):
         """
         self.validarCursorPrendido()
         self.setNodo(self.getNodo().getSiguiente())
+        self.__avanzar()
         
-    def retrocederNodo(self):
+    def retrocederNodo(self) -> None:
         """Mueve el cursor hacia el anterior nodo. Si es el primer nodo de la lista, el cursor se apaga automaticamente
         
         **excepciones**
@@ -243,8 +234,9 @@ class Cursor(TypeStruct,Generic[T]):
         """
         self.validarCursorPrendido()
         self.setNodo(self.getNodo().getAnterior())
+        self.__retroceder()
 
-    def insertar(self, dato:T):
+    def insertar(self, dato:T) -> None:
         """Dado un dato, inserta un nodo con ese dato entre dos nodos
         
         **parameters**
@@ -273,23 +265,35 @@ class Cursor(TypeStruct,Generic[T]):
         **excepciones**
             -   **ErrorCursorDesactivado**: si el cursor esta apagado
         """
-
         nodo = self.getNodo()
 
         Nodo.conectarNodos(nodo.getAnterior(), nodo.getSiguiente())
         
         if nodo.getSiguiente() is None:
             self.retrocederNodo()
+            self.__retroceder()
         else:
             self.avanzarNodo()
 
-        Nodo.desconectarNodo(nodo)
+        nodo.desconectarNodo()
 
         return nodo.getDato()
-        
+
+    #METODOS INTERNOS
+    def __avanzar(self) -> None:
+        """Suma 1 a la poscición del cursor"""
+        self.__poscicion += 1
+
+    def __retroceder(self) -> None:
+        """Resta 1 a la posición del cursor"""
+        self.__poscicion -= 1
+
+    def __apagar(self) -> None:
+        """Quita la poscición cuando se apaga el cursor"""
+        self.__poscicion = None
 
     #VALIDACIONES
-    def validarCursorPrendido(self):
+    def validarCursorPrendido(self) -> None:
         """Valida que el cursor esté prendido
         
         **excepciones**
@@ -297,7 +301,7 @@ class Cursor(TypeStruct,Generic[T]):
         """
         validarCondicion(not self.estaPrendido(), "El cursor no está encendido", ErrorCursorDesactivado)
 
-    def validarCursorApagado(self):
+    def validarCursorApagado(self) -> None:
         """Valida que el cursor esté apagado
         
         **excepciones**
@@ -305,10 +309,48 @@ class Cursor(TypeStruct,Generic[T]):
         """
         validarCondicion(self.estaPrendido(),
                          "Para ejecutar está accion, el cursor debe estár apagado", ErrorCursorEncendido)
-    
-    #GETTERS
 
-    #Calculables
+    #VALIDACIONES INTERNAS
+    def __validarPoscicion(self, indice:int) -> None:
+        """Dado un indice, valida que sea correcto
+        
+        **parameters**
+            -   indice (int): Mayor o igual que cero
+
+        **excepciones**
+            -   **TypeError**: Si el parametro ingresado no es int
+            -   **IndexError**: Si el indice ingresado es negativo
+        """
+        validarTipoObjeto(int, indice, "Ingresa un indice int")
+        validarNoNegativo(indice, True, "Ingresa una poscición no negativa", IndexError)
+
+    #FLAGS
+    def estaPrendido(self) -> bool:
+        """Verifica que el nodo esté prendido
+        
+        **return**
+            -   (bool) Verdadero si el nodo no es None, falso si es None
+        """
+        return self.getNodo() is not None
+
+    #GETTERS SIMPLES
+    def getNodo(self) -> Nodo[T] | None:
+        """Retorna el nodo ingresado en el cursor
+        
+        **return**
+            -   (Nodo[T]) nodo sobre el cual el nodo está poscicionado. Puede ser None
+        """
+        return self.__nodo
+
+    def getPoscicion(self) -> int:
+        """Obtiene la poscición del nodo sobre el que está parado el cursor
+        
+        **return**
+            -   (int) poscición del cursor   
+        """
+        return self.__poscicion
+
+    #GETTERS COMPLEJOS
     def getDatoCursor(self) -> T:
         """Retorna el dato almacenado en el nodo sobre el cual esta parado el cursor
 
@@ -321,30 +363,8 @@ class Cursor(TypeStruct,Generic[T]):
         self.validarCursorPrendido()
         return self.getNodo().getDato()
 
-    #Atributos
-    def getNodo(self) -> Nodo[T] | None:
-        """Retorna el nodo ingresado en el cursor
-        
-        **return**
-            -   (Nodo[T]) nodo sobre el cual el nodo está poscicionado. Puede ser None
-        """
-        return self.__nodo
-
-    #SETTERS
-    def setDatoCursor(self, dato:T):
-        """Setea el dato almacenado en el nodo sobre el cual esta parado el cursor
-
-        **parameters**
-            -   dato (T)
-    
-        **excepciones**
-            -   **TypeError**: si el tipo del dato no es el tipo ingreado T
-            -   **ErrorCursorDesactivado**: si el cursor no está prendido
-        """
-        self.validarCursorPrendido()
-        self.getNodo().setDato(dato)
-
-    def setNodo(self, nodo:Nodo[T]):
+    #SETTERS SIMPLES
+    def setNodo(self, nodo:Nodo[T]) -> None:
         """Setea el cursor sobre un nodo ingresado
         
         **parameters**
@@ -358,6 +378,33 @@ class Cursor(TypeStruct,Generic[T]):
         
         self.__nodo = nodo
 
+    def setPoscicion(self, poscicion:int) -> None:
+        """Setea la poscición sobre el cual está el cursor
+        
+        **parameters**
+            -   poscicion (int): mayor que cero
+
+        **excepciones**
+            -   **TypeError**: Si el parametro ingresado no es int
+            -   **IndexError**: Si el indice ingresado es negativo
+        """
+        self.__validarPoscicion(poscicion)
+        self.__poscicion = poscicion
+
+    #SETTERS COMPLEJOS
+    def setDatoCursor(self, dato:T) -> None:
+        """Setea el dato almacenado en el nodo sobre el cual esta parado el cursor
+
+        **parameters**
+            -   dato (T)
+    
+        **excepciones**
+            -   **TypeError**: si el tipo del dato no es el tipo ingreado T
+            -   **ErrorCursorDesactivado**: si el cursor no está prendido
+        """
+        self.validarCursorPrendido()
+        self.getNodo().setDato(dato)
+
 #LISTA ---------------------------------------------------------------------------------------------------------------------
 class Lista(TypeStruct, Generic[T]):
     #ATRIBUTOS
@@ -367,7 +414,7 @@ class Lista(TypeStruct, Generic[T]):
     __cursores:Vector[Cursor[T]]
 
     #CONSTRUCTOR
-    def __init__(self, tipo):
+    def __init__(self, tipo) -> Lista[T]:
         """Dado un tipo de objeto, crea una lista que soporta ese tipo de objetos
         
         **parameters**
@@ -408,14 +455,6 @@ class Lista(TypeStruct, Generic[T]):
             cursor.avanzarNodo()
 
     #METODOS DE CLASE
-    def estaVacia(self) -> bool:
-        """Verifica que la lista este vacia
-        
-        **return**
-            -   (bool) Verdadero si la lista tiene 0 objetos, falso si tiene mas
-        """
-        return self.getLongitud() == 0
-
     def agregarInicio(self, elemento:T):
         """Agrega un elemento al inicio de la lista
         
@@ -579,7 +618,7 @@ class Lista(TypeStruct, Generic[T]):
         while (i < MAXIMO_CURSORES) and not encedido:
             if (not self.__cursores[i].estaPrendido()):
                 encedido = True
-                self.__cursores[i].activarCursor(self.__getPrimero())
+                self.__cursores[i].activarCursor(self.__getPrimero(), PRIMERA_POSCICION)
             else:
                 i+=1
         
@@ -603,7 +642,7 @@ class Lista(TypeStruct, Generic[T]):
         while (i < MAXIMO_CURSORES) and not encedido:
             if (not self.__cursores[i].estaPrendido()):
                 encedido = True
-                self.__cursores[i].activarCursor(self.__getUltimo())
+                self.__cursores[i].activarCursor(self.__getUltimo(), self.__getultimaPoscicion())
             else:
                 i+=1
 
@@ -620,7 +659,7 @@ class Lista(TypeStruct, Generic[T]):
 
         **excepciones**
             -   **TypeError** si el indice ingresado i no es un int
-            -   **ValidarRango** si el indice es menor que 1 o mayor que 3
+            -   **IndexError** si el indice es menor que 1 o mayor que 3
             -   **ErrorCursorEncendido** si el cursor de la poscicion ingresada esta prendido
         """
         self.__validarCursorNoUsable(i)
@@ -634,11 +673,11 @@ class Lista(TypeStruct, Generic[T]):
 
         **excepciones**
             -   **TypeError** si el indice ingresado i no es un int
-            -   **ValidarRango** si el indice es menor que 1 o mayor que 3
+            -   **IndexError** si el indice es menor que 1 o mayor que 3
             -   **ErrorCursorEncendido** si el cursor de la poscicion ingresada esta prendido
         """
         self.__validarCursorNoUsable(i)
-        self.__getCursor(i).activarCursor(self.__getUltimo())
+        self.__getCursor(i).activarCursor(self.__getUltimo(), self.__getultimaPoscicion())
 
     def desactivarCursor(self, i:int = 1):
         """Desactiva el cursor
@@ -648,7 +687,7 @@ class Lista(TypeStruct, Generic[T]):
 
         **excepciones**
             -   **TypeError** si el indice ingresado i no es un int
-            -   **ValidarRango** si el indice es menor que 1 o mayor que 3
+            -   **IndexError** si el indice es menor que 1 o mayor que 3
             -   **ErrorCursorDesactivado** si el cursor de la poscicion ingresada esta apagado
         """
         self.__validarCursorUsable(i)
@@ -684,7 +723,7 @@ class Lista(TypeStruct, Generic[T]):
 
         **excepciones**
             -   **TypeError** si el indice ingresado i no es un int
-            -   **ValidarRango** si el indice es menor que 1 o mayor que 3
+            -   **IndexError** si el indice es menor que 1 o mayor que 3
             -   **ErrorCursorDesactivado** si el cursor de la poscicion ingresada esta apagado
         """
         self.__getCursor(i).avanzarNodo()
@@ -697,7 +736,7 @@ class Lista(TypeStruct, Generic[T]):
 
         **excepciones**
             -   **TypeError** si el indice ingresado i no es un int
-            -   **ValidarRango** si el indice es menor que 1 o mayor que 3
+            -   **IndexError** si el indice es menor que 1 o mayor que 3
             -   **ErrorCursorDesactivado** si el cursor de la poscicion ingresada esta apagado
         """
         self.__getCursor(i).retrocederNodo()
@@ -710,7 +749,7 @@ class Lista(TypeStruct, Generic[T]):
 
         **excepciones**
             -   **TypeError** si el indice ingresado i no es un int
-            -   **ValidarRango** si el indice es menor que 1 o mayor que 3
+            -   **IndexError** si el indice es menor que 1 o mayor que 3
             -   **ErrorCursorDesactivado** si el cursor de la poscicion ingresada esta apagado
         """
         self.__validarCursorUsable(i)
@@ -727,7 +766,7 @@ class Lista(TypeStruct, Generic[T]):
 
         **excepciones**
             -   **TypeError** si el indice ingresado i no es un int
-            -   **ValidarRango** si el indice es menor que 1 o mayor que 3
+            -   **IndexError** si el indice es menor que 1 o mayor que 3
             -   **ErrorCursorDesactivado** si el cursor de la poscicion ingresada esta apagado
         """
         self.__validarCursorUsable(i)
@@ -742,7 +781,7 @@ class Lista(TypeStruct, Generic[T]):
 
         **excepciones**
             -   **TypeError** si el indice ingresado i no es un int
-            -   **ValidarRango** si el indice es menor que 1 o mayor que 3
+            -   **IndexError** si el indice es menor que 1 o mayor que 3
             -   **ErrorCursorDesactivado** si el cursor de la poscicion ingresada esta apagado
         """
         self.__validarCursorUsable(i) 
@@ -759,7 +798,7 @@ class Lista(TypeStruct, Generic[T]):
 
         **excepciones**
             -   **TypeError** si el indice ingresado i no es un int
-            -   **ValidarRango** si el indice es menor que 1 o mayor que 3
+            -   **IndexError** si el indice es menor que 1 o mayor que 3
             -   **ErrorCursorDesactivado** si el cursor de la poscicion ingresada esta apagado
         """
         self.__validarCursorUsable(i) 
@@ -777,7 +816,7 @@ class Lista(TypeStruct, Generic[T]):
 
         **excepciones**
             -   **TypeError** si algún indice ingresado no es un int
-            -   **ValidarRango** si algún indice es menor que 1 o mayor que 3
+            -   **IndexError** si algún indice es menor que 1 o mayor que 3
             -   **ErrorCursorDesactivado** si algún cursor de algúna poscicion ingresada esta apagado
         """
         self.__validarCursorUsable(i)
@@ -795,6 +834,10 @@ class Lista(TypeStruct, Generic[T]):
 
         **return**
             -   (bool) Verdadero si el cursor está prendido, falso si no
+
+        **excepciones**
+            -   **TypeError** si algún indice ingresado no es un int
+            -   **IndexError** si algún indice es menor que 1 o mayor que 3
         """
         return self.__getCursor(i).estaPrendido()
 
@@ -809,7 +852,7 @@ class Lista(TypeStruct, Generic[T]):
             
         **excepciones**
             -   **TypeError** si el indice ingresado i no es un int
-            -   **ValidarRango** si el indice es menor que 1 o mayor que 3
+            -   **IndexError** si el indice es menor que 1 o mayor que 3
             -   **ErrorCursorDesactivado** si el cursor de la poscicion ingresada esta apagado
         """
         self.__validarCursorUsable(i)
@@ -826,7 +869,7 @@ class Lista(TypeStruct, Generic[T]):
             
         **excepciones**
             -   **TypeError** si el indice ingresado i no es un int
-            -   **ValidarRango** si el indice es menor que 1 o mayor que 3
+            -   **IndexError** si el indice es menor que 1 o mayor que 3
             -   **ErrorCursorDesactivado** si el cursor de la poscicion ingresada esta apagado
         """
         self.__validarCursorUsable(i)
@@ -863,7 +906,7 @@ class Lista(TypeStruct, Generic[T]):
 
         **excepciones**
             -   **TypeError** si el indice ingresado no es un int
-            -   **ValidarRango** si el indice es menor que 1 o mayor que 3
+            -   **IndexError** si el indice es menor que 1 o mayor que 3
         """   
         validarTipoObjeto(int, indice, "Ingresa un indice int")
         validarRango(indice, 1 , MAXIMO_CURSORES, 
@@ -878,7 +921,7 @@ class Lista(TypeStruct, Generic[T]):
 
         **excepciones**
             -   **TypeError** si el indice ingresado i no es un int
-            -   **ValidarRango** si el indice es menor que 1 o mayor que 3
+            -   **IndexError** si el indice es menor que 1 o mayor que 3
             -   **ErrorCursorDesactivado** si el cursor de la poscicion ingresada esta apagado
         """
         self.__validarIndiceCursor(i)
@@ -892,14 +935,122 @@ class Lista(TypeStruct, Generic[T]):
 
         **excepciones**
             -   **TypeError** si el indice ingresado i no es un int
-            -   **ValidarRango** si el indice es menor que 1 o mayor que 3
+            -   **IndexError** si el indice es menor que 1 o mayor que 3
             -   **ErrorCursorEncendido** si el cursor de la poscicion ingresada esta prendido
         """
         self.__validarIndiceCursor(i)
         self.__getCursor(i).validarCursorApagado()
 
+    #METODOS ESTATICOS
+    @staticmethod
+    def iniciarCursores(*listas:Lista, cursor:int = 1) -> None:
+        """Dado una serie de listas, activa los cursores en el primer cursor
+        
+        **parameters**
+            -   *listas (Lista): cualquier tipo de dato almacenado
+            -   cursor (int): por defecto 1. Entre 1 y 3
 
-    #GETTERS    
+        **excepciones**
+            -   **TypeError**: si se ingreso algo que no fuese una lista o si el cursor seleccionado no es int 
+            -   **IndexError**: si el cursor es menor que 1 o mayor que 3
+        """    
+        for lista in listas:
+            validarTipoObjeto(Lista, lista, "Ingrese solo listas por parametro")
+            if lista.cursorPrendido(cursor):
+                lista.desactivarCursor(cursor)
+
+            lista.iniciarCursorInicio(cursor)
+    
+    @staticmethod
+    def finalizarCursores(*listas:Lista, cursor:int = 1) -> None:
+        """Dado una serie de listas, activa los cursores en el ultimo cursor
+        
+        **parameters**
+            -   *listas (Lista): cualquier tipo de dato almacenado
+            -   cursor (int): por defecto 1. Entre 1 y 3
+
+        **excepciones**
+            -   **TypeError**: si se ingreso algo que no fuese una lista o si el cursor seleccionado no es int 
+            -   **IndexError**: si el cursor es menor que 1 o mayor que 3
+        """    
+        for lista in listas:
+            validarTipoObjeto(Lista, lista, "Ingrese solo listas por parametro")
+            if lista.cursorPrendido(cursor):
+                lista.desactivarCursor(cursor)
+
+            lista.iniciarCursorFinal(cursor)
+
+    @staticmethod
+    def avanzarCursores(*listas:Lista, cursor:int = 1) -> None:
+        """Dado una serie de listas, avanza sus cursores al siguiente nodo
+        
+        **parameters**
+            -   *listas (Lista): cualquier tipo de dato almacenado
+            -   cursor (int): por defecto 1. Entre 1 y 3
+
+        **excepciones**
+            -   **TypeError**: si se ingreso algo que no fuese una lista o si el cursor seleccionado no es int 
+            -   **IndexError**: si el cursor es menor que 1 o mayor que 3
+            -   **ErrorCursorDesactivado**: si algún cursor de alguna lista ingresada esta apagado
+        """    
+        for lista in listas:
+            validarTipoObjeto(Lista, lista, "Ingrese solo listas por parametro")
+            lista.avanzarCursor(cursor)
+
+    @staticmethod
+    def retrocederCursores(*listas:Lista, cursor:int = 1) -> None:
+        """Dado una serie de listas, retrocede los cursores al nodo anterior
+        
+        **parameters**
+            -   *listas (Lista): cualquier tipo de dato almacenado
+            -   cursor (int): por defecto 1. Entre 1 y 3
+
+        **excepciones**
+            -   **TypeError**: si se ingreso algo que no fuese una lista o si el cursor seleccionado no es int 
+            -   **IndexError**: si el cursor es menor que 1 o mayor que 3
+            -   **ErrorCursorDesactivado**: si algún cursor de alguna lista ingresada esta apagado
+        """    
+        for lista in listas:
+            validarTipoObjeto(Lista, lista, "Ingrese solo listas por parametro")
+            lista.retrocederCursor(cursor)
+    
+    @staticmethod
+    def avanzarCursores(*listas:Lista, cursor:int = 1) -> None:
+        """Dado una serie de listas, desactiva todo los cursores
+        
+        **parameters**
+            -   *listas (Lista): cualquier tipo de dato almacenado
+            -   cursor (int): por defecto 1. Entre 1 y 3
+
+        **excepciones**
+            -   **TypeError**: si se ingreso algo que no fuese una lista o si el cursor seleccionado no es int 
+            -   **IndexError**: si el cursor es menor que 1 o mayor que 3
+            -   **ErrorCursorDesactivado**: si algún cursor de alguna lista ingresada esta apagado
+        """    
+        for lista in listas:
+            validarTipoObjeto(Lista, lista, "Ingrese solo listas por parametro")
+            if not lista.cursorPrendido():
+                lista.desactivarCursor(cursor)
+
+    #FLAGS
+    def estaVacia(self) -> bool:
+        """Verifica que la lista este vacia
+        
+        **return**
+            -   (bool) Verdadero si la lista tiene 0 objetos, falso si tiene mas
+        """
+        return self.getLongitud() == 0
+
+    #GETTERS SIMPLES
+    def getLongitud(self) -> int:
+        """Retorna la longitud de la lista
+        
+        **return**
+            -   (int) cantidad de objetos
+        """
+        return self.__longitud
+    
+    #GETTERS COMPLEJOS
     def getDatoCursor(self, i:int = 1) -> T:
         """Obtiene el valor de el nodo, sobre el cual, el cursor está parado
         
@@ -908,7 +1059,7 @@ class Lista(TypeStruct, Generic[T]):
 
         **excepciones**
             -   **TypeError** si el indice ingresado i no es un int
-            -   **ValidarRango** si el indice es menor que 1 o mayor que 3
+            -   **IndexError** si el indice es menor que 1 o mayor que 3
             -   **ErrorCursorEncendido** si el cursor de la poscicion ingresada esta prendido
         """
         self.__validarCursorUsable(i)
@@ -922,7 +1073,7 @@ class Lista(TypeStruct, Generic[T]):
 
         **excepciones**
             -   **TypeError** si el indice ingresado i no es un int
-            -   **ValidarRango** si el indice es menor que 1 o mayor que 3
+            -   **IndexError** si el indice es menor que 1 o mayor que 3
             -   **ErrorCursorEncendido** si el cursor de la poscicion ingresada esta prendido
         """
         return self.__getCursor(i).getNodo().getSiguiente().getDato()
@@ -935,25 +1086,12 @@ class Lista(TypeStruct, Generic[T]):
 
         **excepciones**
             -   **TypeError** si el indice ingresado i no es un int
-            -   **ValidarRango** si el indice es menor que 1 o mayor que 3
+            -   **IndexError** si el indice es menor que 1 o mayor que 3
             -   **ErrorCursorEncendido** si el cursor de la poscicion ingresada esta prendido
         """
         return self.__getCursor(i).getNodo().getAnterior().getDato()
 
-    def __getCursor(self,i:int) -> Cursor[T]:
-        """Obtiene un cursor
-        
-        **parameters**
-            -   i (int): entre 1 y 3
-
-        **excepciones**
-            -   **TypeError** si el indice ingresado i no es un int
-            -   **ValidarRango** si el indice es menor que 1 o mayor que 3
-        """
-        self.__validarIndiceCursor(i)
-        return self.__cursores[i-1]
-
-
+    #GETTERS INTERNOS SIMPLES
     def __getPrimero(self) -> Nodo[T]:
         """Retorna el primer nodo de la lista
         
@@ -969,12 +1107,29 @@ class Lista(TypeStruct, Generic[T]):
             -   (Nodo[T]) nodo inicial
         """
         return self.__ultimoNodo
-    
 
-    def getLongitud(self) -> int:
-        """Retorna la longitud de la lista"""
-        return self.__longitud
-    
+    #GETTERS INTERNOS COMPLEJOS
+    def __getultimaPoscicion(self) -> int:
+        """Obtiene la ultima poscición en la lista
+        
+        **return**
+            -   (int) longitud -1
+        """
+        return self.getLongitud() - 1
+
+    def __getCursor(self,i:int) -> Cursor[T]:
+        """Obtiene un cursor
+        
+        **parameters**
+            -   i (int): entre 1 y 3
+
+        **excepciones**
+            -   **TypeError** si el indice ingresado i no es un int
+            -   **IndexError** si el indice es menor que 1 o mayor que 3
+        """
+        self.__validarIndiceCursor(i)
+        return self.__cursores[i-1]
+
     #SETTERS
     def setDatoCursor(self, dato:T, i:int = 1):
         """Setea el valor de el nodo, sobre el cual, el cursor está parado
@@ -984,13 +1139,14 @@ class Lista(TypeStruct, Generic[T]):
 
         **excepciones**
             -   **TypeError** si el indice ingresado i no es un int
-            -   **ValidarRango** si el indice es menor que 1 o mayor que 3
+            -   **IndexError** si el indice es menor que 1 o mayor que 3
             -   **ErrorCursorEncendido** si el cursor de la poscicion ingresada esta prendido
         """
         self.__validarCursorUsable(i)
         self.__validarEntrada__(dato)
         self.__getCursor(i).setDatoCursor(dato)
 
+    #SETTERS INTERNOS
     def __setPrimero(self, nodo:Nodo[T]):
         """Setea al primer nodo de la lista
         
@@ -1006,4 +1162,3 @@ class Lista(TypeStruct, Generic[T]):
             -   nodo (Nodo[T]): nodo final
         """
         self.__ultimoNodo = nodo
-    

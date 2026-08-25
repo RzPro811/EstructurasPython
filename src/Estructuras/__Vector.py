@@ -756,6 +756,33 @@ class Matriz(Generic[T], TypeStruct):
         self.eliminarColumna(indice)
         self.eliminarFila(jndice)
 
+    #METODOS INTERNOS
+    def __buscar(self, item:T) -> tuple[int, int]:
+        """Dado un item, lo busca y retorna los indices fila y columna.
+
+        **parameters**
+            -   item (T)
+
+        **return**
+            -   (int) indice columna
+            -   (int) indice fila 
+        """
+        i = PRIMERA_POSCICION
+        j:int
+        encontrado = False
+
+        while not encontrado and (i <= self.__getUltimaPosColu()):
+            j = PRIMERA_POSCICION
+            while not encontrado and (i <= self.__getUltimaPosFila()):
+                if (item == self.getItem(i,j)):
+                    encontrado = True
+                else:
+                    j+=1
+            if not encontrado: i+=1
+
+        if encontrado: return i,j
+        else: return NO_ENCONTRADO, NO_ENCONTRADO
+        
     #VALIDACIONES
     def __validarIndiceFila(self, indice:int) -> None:
         """Valida que un indice ingresado, pueda ser un indice fila
@@ -983,7 +1010,7 @@ class Matriz(Generic[T], TypeStruct):
         return vacia
             
 
-    def esCuadrada(self):
+    def esCuadrada(self) -> bool:
         """Verifica que la matriz sea cuadrada
         
         **return**
@@ -991,7 +1018,7 @@ class Matriz(Generic[T], TypeStruct):
         """
         return self.getLongitudFila() == self.getLongitudColu()
     
-    def esSimetrica(self):
+    def esSimetrica(self) -> bool:
         """Verifica que la matriz sea simetrica
         
         **return**
@@ -1010,6 +1037,21 @@ class Matriz(Generic[T], TypeStruct):
 
         return simetrica
 
+    def estaElItem(self, item:T) -> bool:
+        """Verifica que el item se encuentre en la matriz
+        
+        **parameters**
+            -   item (T): puede ser None
+
+        **return**
+            -   (bool) Verdadero si está en la matriz, falso si no
+
+        **excepciones**
+            -   **TypeError**: Si el item no es del tipo ingresado T
+        """
+        self.__validarEntrada__(item, True)
+        i,j = self.__buscar(item)
+        return i != NO_ENCONTRADO
 
     #GETTERS COMPLEJOS
     def getCantidadElementos(self) -> int:
@@ -1093,6 +1135,70 @@ class Matriz(Generic[T], TypeStruct):
         """
         self.__validarIndices(indice, jndice)
         return self.__array[indice][jndice]
+
+    def getIndices(self, item:T) -> tuple[int, int]:
+        """Dado un item de la matriz, retorna sus indices
+        
+        **parameters**
+            -   item (T): Pertence a la matriz
+
+        **return**
+            -   (int) inidce fila
+            -   (int) indice columna
+
+        **excepciones**
+            -   **TypeError**: Si el item ingresado no es del tipo ingresado T
+            -   **ElementoNoEncontrado**: Si el elemento no se encuentra en la matriz
+        """
+        self.__validarEntrada__(item, True)
+        i, j = self.__buscar(item)
+
+        validarValorCompatible(i, NO_ENCONTRADO, "Este item no se encuentrá en la matriz", ElementoNoEncontrado)
+        return i,j
+
+    def getIndiceFila(self, item:T) -> int:
+        """Dado un item, retorna el indice fila
+
+        **parameters**
+            -   item (T): Pertence a la matriz
+
+        **return**
+            -   (int) inidce fila
+
+        **excepciones**
+            -   **TypeError**: Si el item ingresado no es del tipo ingresado T
+            -   **ElementoNoEncontrado**: Si el elemento no se encuentra en la matriz
+        """
+        self.__validarEntrada__(item, True)
+        i,j = self.__buscar(item)
+        validarValorCompatible(i, NO_ENCONTRADO, "Este item no se encuentrá en la matriz", ElementoNoEncontrado)
+        return i
+        
+    def getIndiceColumna(self, item:T) -> int:
+        """Dado un item, retorna el indice columna
+
+        **parameters**
+            -   item (T): Pertence a la matriz
+
+        **return**
+            -   (int) inidce columna
+
+        **excepciones**
+            -   **TypeError**: Si el item ingresado no es del tipo ingresado T
+            -   **ElementoNoEncontrado**: Si el elemento no se encuentra en la matriz
+        """
+        self.__validarEntrada__(item, True)
+        i,j = self.__buscar(item)
+        validarValorCompatible(j, NO_ENCONTRADO, "Este item no se encuentrá en la matriz", ElementoNoEncontrado)
+        return j
+        
+    def getCantidadEspacios(self) -> int:
+        """Obtiene la cantidad de espacios totales en la matriz
+        
+        **return**
+            -   (int) longitud filas x longitud columnas
+        """
+        return self.getLongitudColu()*self.getIndiceFila()
 
     #GETTERS COMPLEJOS INTERNOS
     def __getUltimaPosFila(self) -> int:

@@ -59,7 +59,7 @@ from .__Lista import Lista
 from .__Vector import Vector, Matriz, TipoExpansion
 from .__Grafo import Grafo, Digrafo
 from .__Ordenador import Ordenador, Visualizador
-from .__NoLineales import Cola, Pila, Heap
+from .__Colas import Cola, Pila, Heap
 from .__Arbol import ArbolBin
 from .__Validaciones import (FalloValidacion,
     validarTipo,

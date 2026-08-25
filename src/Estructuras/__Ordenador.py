@@ -1,5 +1,5 @@
 from .__Lista import Vector, Lista, T
-from .__NoLineales import Heap, Cola, PRIMERA_POSCICION
+from .__Colas import Heap, Cola, PRIMERA_POSCICION
 from .__Validaciones import validarTipoObjeto, validarMayorQue, validarOrden, validarNoNegativo
 from .__Excepciones.Ordenador import*
 from random import randint
